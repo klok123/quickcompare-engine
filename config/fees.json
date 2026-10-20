@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "version": "2026.10.18",
+  "updated_at": "2026-10-18T17:00:00+05:30",
+  "notes": "Verified October 2026 fee schedules for Blinkit, Zepto, and Instamart. Source: Aegis Quick-Commerce Engine Blueprint.",
+  "friction_penalty_per_extra_order": 25.0,
+  "split_trigger": {
+    "abs_floor": 40.0,
+    "pct": 0.08
+  },
+  "platforms": {
+    "blinkit": {
+      "id": "blinkit",
+      "name": "Blinkit",
+      "effective_from": "2026-03-16",
+      "currency": "INR",
+      "eta_min": 12,
+      "free_delivery_threshold": 199.0,
+      "delivery_fee_standard": 30.0,
+      "handling_fee": 11.0,
+      "small_cart_threshold": 99.0,
+      "small_cart_fee": 20.0,
+      "platform_fee": 0.0,
+      "surge_fee_default": 0.0
+    },
+    "zepto": {
+      "id": "zepto",
+      "name": "Zepto",
+      "effective_from": "2026-08-19",
+      "currency": "INR",
+      "eta_min": 10,
+      "free_delivery_threshold": 199.0,
+      "free_delivery_threshold_peak": 299.0,
+      "delivery_fee_standard": 30.0,
+      "handling_fee": 0.0,
+      "small_cart_threshold": 0.0,
+      "small_cart_fee": 0.0,
+      "platform_fee": 0.0,
+      "surge_fee_default": 0.0
+    },
+    "instamart": {
+      "id": "instamart",
+      "name": "Instamart",
+      "effective_from": "2026-02-08",
+      "currency": "INR",
+      "eta_min": 14,
+      "free_delivery_threshold_member": 199.0,
+      "free_delivery_threshold_non_member": 299.0,
+      "delivery_fee_standard": 30.0,
+      "handling_fee": 9.80,
+      "small_cart_threshold": 199.0,
+      "small_cart_fee": 15.0,
+      "platform_fee": 0.0,
+      "surge_fee_non_member": 15.0
+    },
+    "bbnow": {
+      "id": "bbnow",
+      "name": "BigBasket Now",
+      "effective_from": "2026-06-01",
+      "currency": "INR",
+      "eta_min": 15,
+      "free_delivery_threshold": 199.0,
+      "delivery_fee_standard": 30.0,
+      "handling_fee": 5.0,
+      "small_cart_threshold": 99.0,
+      "small_cart_fee": 15.0,
+      "platform_fee": 0.0,
+      "surge_fee_default": 0.0
+    }
+  }
+}

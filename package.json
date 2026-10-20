@@ -1,0 +1,30 @@
+{
+  "name": "quickcompare-engine",
+  "version": "2.0.0",
+  "description": "Production-grade Live Quick-Commerce Price Comparison & Branch-and-Bound Grocery Basket Optimizer for Blinkit & Zepto",
+  "type": "module",
+  "main": "src/compare-server.mjs",
+  "scripts": {
+    "start": "node src/compare-server.mjs",
+    "test": "node test/test-server-integration.mjs",
+    "test:solver": "node test/test-basket-solver.mjs",
+    "test:matcher": "node test/test-smart-matcher.mjs",
+    "test:qa": "node scripts/autonomous-browser-tester.mjs"
+  },
+  "keywords": [
+    "quick-commerce",
+    "price-comparison",
+    "blinkit",
+    "zepto",
+    "instamart",
+    "basket-optimization",
+    "milp-solver",
+    "cdp-automation",
+    "reverse-engineering"
+  ],
+  "author": "Aegis & klok123",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

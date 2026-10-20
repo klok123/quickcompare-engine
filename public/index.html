@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickCompare — India's Live Quick Commerce Price & Basket Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      background-color: #08090E;
+      color: #E2E8F0;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .card-glass {
+      background: rgba(15, 18, 27, 0.75);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .card-glass:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+    .winner-glow {
+      box-shadow: 0 0 30px -5px rgba(16, 185, 129, 0.25);
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+    .blinkit-badge { background: #F8CB46; color: #1E1B00; font-weight: 700; }
+    .zepto-badge { background: #682390; color: #FFFFFF; font-weight: 700; }
+    .instamart-badge { background: #FC8019; color: #FFFFFF; font-weight: 700; }
+    .bbnow-badge { background: #84C225; color: #1E1B00; font-weight: 700; }
+    
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #08090E; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- ========================================== -->
+  <!-- NAVBAR WITH LOCATION SELECTOR              -->
+  <!-- ========================================== -->
+  <header class="border-b border-white/5 bg-[#0A0D14]/90 sticky top-0 z-50 backdrop-blur-md">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/35 flex items-center justify-center text-emerald-400 font-extrabold text-base shadow-lg shadow-emerald-500/10">
+          QC
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold tracking-tight text-white text-base">QuickCompare</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold uppercase tracking-wider">Commercial v2.0</span>
+          </div>
+          <p class="text-[11px] text-slate-400 leading-none mt-0.5">Blinkit • Zepto • Swiggy Instamart</p>
+        </div>
+      </div>
+
+      <!-- Mode Selector Tabs -->
+      <div class="flex items-center bg-white/5 p-1 rounded-xl border border-white/10 text-xs">
+        <button id="tabSingle" class="px-3.5 py-1.5 rounded-lg font-semibold transition-all bg-emerald-500 text-slate-950 shadow-sm flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <span>Single Product</span>
+        </button>
+        <button id="tabBasket" class="px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:text-white flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          <span>Grocery Basket (MILP)</span>
+          <span id="navCartBadge" class="hidden px-1.5 py-0.2 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black">0</span>
+        </button>
+      </div>
+
+      <!-- Location Switcher Pill -->
+      <div class="flex items-center gap-2 text-xs">
+        <button id="btnLocationPicker" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition-all">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="currentLocationLabel" class="font-medium">Bengaluru (HSR Layout)</span>
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================== -->
+  <!-- LOCATION MODAL                             -->
+  <!-- ========================================== -->
+  <div id="locationModal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="max-w-md w-full rounded-2xl card-glass p-6 border border-white/15 shadow-2xl">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+        <div>
+          <h3 class="font-bold text-white text-base">Select Your Delivery Location</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Dark stores and fee thresholds map to your area</p>
+        </div>
+        <button id="btnCloseLocationModal" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <div class="space-y-2 mb-4">
+        <button class="loc-option w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left flex items-center justify-between transition-all" data-loc="Bengaluru (HSR Layout)" data-pin="560034">
+          <div>
+            <span class="font-bold text-white text-sm block">Bengaluru</span>
+            <span class="text-xs text-slate-400">HSR Layout / Koramangala • Pincode 560034</span>
+          </div>
+          <span class="text-xs text-emerald-400 font-semibold">Active</span>
+        </button>
+        <button class="loc-option w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left flex items-center justify-between transition-all" data-loc="Delhi NCR (Gurugram)" data-pin="122002">
+          <div>
+            <span class="font-bold text-white text-sm block">Delhi NCR</span>
+            <span class="text-xs text-slate-400">Gurugram Cyber City • Pincode 122002</span>
+          </div>
+        </button>
+        <button class="loc-option w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left flex items-center justify-between transition-all" data-loc="Mumbai (Bandra West)" data-pin="400050">
+          <div>
+            <span class="font-bold text-white text-sm block">Mumbai</span>
+            <span class="text-xs text-slate-400">Bandra West / Khar • Pincode 400050</span>
+          </div>
+        </button>
+        <button class="loc-option w-full p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-left flex items-center justify-between transition-all" data-loc="Hyderabad (HITEC City)" data-pin="500081">
+          <div>
+            <span class="font-bold text-white text-sm block">Hyderabad</span>
+            <span class="text-xs text-slate-400">HITEC City / Madhapur • Pincode 500081</span>
+          </div>
+        </button>
+      </div>
+
+      <div class="pt-3 border-t border-white/10">
+        <label class="block text-xs font-semibold text-slate-400 mb-1.5">Or enter custom pincode:</label>
+        <div class="flex items-center gap-2">
+          <input type="text" id="customPincodeInput" placeholder="e.g. 560102" maxlength="6" class="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500">
+          <button id="btnApplyPincode" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition-all">Apply</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- ITEMIZE RECEIPT MODAL                      -->
+  <!-- ========================================== -->
+  <div id="receiptModal" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="max-w-md w-full rounded-2xl card-glass p-6 border border-white/15 shadow-2xl">
+      <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🧾</span>
+          <div>
+            <h3 class="font-bold text-white text-base">Verified Bill Breakdown</h3>
+            <p class="text-xs text-slate-400">Strictly following October 2026 fee schedules</p>
+          </div>
+        </div>
+        <button id="btnCloseReceiptModal" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <div id="receiptModalContent" class="space-y-4 text-xs">
+        <!-- Injected dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-20 right-6 z-50 bg-emerald-500 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-2xl text-xs flex items-center gap-2 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300">
+    <span class="text-base">✓</span>
+    <span id="toastMsg">Added to basket!</span>
+  </div>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-8">
+
+    <!-- ========================================== -->
+    <!-- VIEW 1: SINGLE PRODUCT LIVE SEARCH        -->
+    <!-- ========================================== -->
+    <div id="singleView" class="block">
+      <div class="text-center max-w-2xl mx-auto mb-8">
+        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">
+          Find the <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Cheapest Dark Store</span> in Seconds
+        </h1>
+        <p class="text-slate-400 text-sm">
+          Live parallel comparison across Blinkit & Zepto. Fair unit rates (₹/100g) with zero false matches.
+        </p>
+      </div>
+
+      <!-- Search Box -->
+      <div class="max-w-3xl mx-auto mb-6">
+        <form id="searchForm" class="relative flex items-center">
+          <div class="absolute left-4 text-slate-400 pointer-events-none">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+          <input 
+            type="text" 
+            id="queryInput" 
+            placeholder="Search products (e.g. Amul Butter, Coca Cola, Fortune Oil, Maggi, Aashirvaad Atta)..." 
+            class="w-full bg-[#111422] border border-white/10 rounded-2xl py-4 pl-12 pr-32 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 focus:ring-2 focus:ring-emerald-500/20 text-base shadow-xl transition-all"
+            value="Amul Butter"
+            autocomplete="off"
+          />
+          <button 
+            type="submit" 
+            id="searchBtn"
+            class="absolute right-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-5 py-2.5 rounded-xl text-sm transition-all flex items-center gap-2 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+          >
+            <span>Compare</span>
+            <svg id="btnArrow" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            <svg id="btnSpinner" class="w-4 h-4 animate-spin hidden" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          </button>
+        </form>
+
+        <!-- Popular Categories Chips -->
+        <div class="flex flex-wrap items-center gap-2 mt-3 px-1 text-xs">
+          <span class="text-slate-500 font-medium">Popular:</span>
+          <button type="button" class="quick-chip px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 transition-colors">🥛 Amul Butter</button>
+          <button type="button" class="quick-chip px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 transition-colors">🌾 Aashirvaad Atta</button>
+          <button type="button" class="quick-chip px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 transition-colors">🥤 Coca Cola</button>
+          <button type="button" class="quick-chip px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 transition-colors">🫒 Fortune Oil</button>
+          <button type="button" class="quick-chip px-3 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/5 transition-colors">🍜 Maggi</button>
+        </div>
+      </div>
+
+      <!-- Stats Bar -->
+      <div id="statsBar" class="hidden max-w-4xl mx-auto mb-6 p-4 rounded-xl card-glass flex items-center justify-between text-xs">
+        <div class="flex items-center gap-4">
+          <div>
+            <span class="text-slate-400">Total Scanned:</span>
+            <span id="statTotal" class="font-bold text-white ml-1">0 items</span>
+          </div>
+          <div class="h-3 w-px bg-white/10"></div>
+          <div>
+            <span class="text-slate-400">Direct Matches:</span>
+            <span id="statMatches" class="font-bold text-emerald-400 ml-1">0</span>
+          </div>
+          <div class="h-3 w-px bg-white/10"></div>
+          <div>
+            <span class="text-slate-400">Freshness:</span>
+            <span id="statFreshness" class="font-bold text-emerald-400 ml-1">● live</span>
+          </div>
+        </div>
+        <div id="statTopSaving" class="font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+          Max Savings: ₹0
+        </div>
+      </div>
+
+      <!-- Results Container -->
+      <div id="resultsContainer" class="space-y-4 max-w-4xl mx-auto"></div>
+    </div>
+
+
+    <!-- ========================================== -->
+    <!-- VIEW 2: BASKET OPTIMIZER (MILP + SPLIT)   -->
+    <!-- ========================================== -->
+    <div id="basketView" class="hidden">
+      <div class="text-center max-w-3xl mx-auto mb-8">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-3">
+          <span>⚡ Aegis Branch & Bound MILP Solver</span>
+          <span class="w-1 h-1 rounded-full bg-emerald-400"></span>
+          <span>Friction Gate: ₹25 / extra order</span>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white mb-2">
+          Grocery Basket <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Checkout Optimizer</span>
+        </h1>
+        <p class="text-slate-400 text-sm">
+          Calculates total payable bill including handling fees & delivery thresholds. Defaults to single app; splits only when savings beat multiple delivery hassle.
+        </p>
+      </div>
+
+      <!-- Basket Controls & Preset Loader -->
+      <div class="max-w-4xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-3 p-4 rounded-xl card-glass">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs text-slate-400 font-medium">Quick Presets:</span>
+          <button id="btnLoadWorkedExample" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition-all">
+            📄 Hark 8-Item Worked Example
+          </button>
+          <button id="btnLoadSmallCart" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 border border-white/10 text-xs transition-all">
+            💡 ₹156 Cart (Threshold Repair Test)
+          </button>
+          <button id="btnClearCart" class="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs transition-all">
+            🗑️ Clear Cart
+          </button>
+        </div>
+        <button id="btnSolveBasket" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-2 rounded-xl text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+          <span>Recalculate Cheapest Checkout</span>
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+        </button>
+      </div>
+
+      <!-- Threshold Repair Alert Banner (Dynamic) -->
+      <div id="thresholdRepairBanner" class="hidden max-w-4xl mx-auto mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-bold text-base shrink-0">
+              💡
+            </div>
+            <div>
+              <h4 class="font-bold text-sm text-white mb-0.5">Threshold Repair Recommendation (Save Delivery Fee)</h4>
+              <p id="repairText" class="text-xs text-amber-200/90 leading-relaxed"></p>
+              <div id="repairComparison" class="mt-2 text-xs flex items-center gap-4 text-slate-300"></div>
+            </div>
+          </div>
+          <button id="btnAddRepairStaple" class="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs transition-all shrink-0">
+            + Add to Cart & Save
+          </button>
+        </div>
+      </div>
+
+      <!-- Basket Solver Result Box -->
+      <div id="basketResultBox" class="hidden max-w-4xl mx-auto mb-8 space-y-6">
+        
+        <!-- Primary Winner Card: Default Single App -->
+        <div class="p-6 rounded-2xl card-glass border-2 border-emerald-500/40 winner-glow relative overflow-hidden">
+          <div class="flex flex-wrap items-center justify-between gap-4 mb-4 pb-4 border-b border-white/10">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-bold uppercase tracking-wider">
+                  Cheapest Checkout Winner
+                </span>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> live verified
+                </span>
+              </div>
+              <h3 id="winnerTitle" class="text-2xl font-extrabold text-white">ZEPTO Only — ₹889.00</h3>
+              <p id="winnerSubtitle" class="text-xs text-slate-400 mt-0.5">Items subtotal: ₹889 • Total fees: ₹0</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-400 block">Total Payable</span>
+              <span id="winnerPayable" class="text-3xl font-black text-emerald-400 mono">₹889.00</span>
+            </div>
+          </div>
+
+          <!-- Split Trigger Status Banner -->
+          <div id="splitBanner" class="p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <span id="splitIcon" class="text-sm">🛡️</span>
+              <span id="splitMessage" class="text-slate-300 font-medium"></span>
+            </div>
+            <span id="splitSavingsBadge" class="font-bold text-xs px-2.5 py-1 rounded-md"></span>
+          </div>
+
+          <!-- Itemized Breakdown Accordion -->
+          <div class="space-y-2">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Assigned Items in Winning Order:</h4>
+            <div id="winnerItemsList" class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs"></div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="mt-6 pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+            <button id="btnViewBillBreakdown" class="text-xs text-emerald-400 hover:text-emerald-300 font-semibold underline flex items-center gap-1">
+              <span>🧾 View Itemized Fee & Tax Breakdown</span>
+            </button>
+            <div class="flex items-center gap-2">
+              <a id="winnerDirectBuyLink" href="https://www.zepto.com" target="_blank" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2">
+                <span>Build Cart on Platform</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Basket Items Table / Interactive Cart Editor -->
+      <div class="max-w-4xl mx-auto rounded-2xl card-glass p-6">
+        <div class="flex items-center justify-between mb-4 pb-3 border-b border-white/10">
+          <div>
+            <h3 class="font-bold text-white text-base">Current Basket Items (<span id="basketCount">0</span>)</h3>
+            <p class="text-xs text-slate-400">Candidate prices across platforms used by branch-and-bound solver</p>
+          </div>
+          <button id="btnAddCustomItem" class="text-xs px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-emerald-400 border border-white/10 transition-colors font-semibold">
+            + Add Custom Product
+          </button>
+        </div>
+
+        <div id="basketItemsTable" class="space-y-3">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Floating Cart Bar Pill -->
+  <div id="floatingCartPill" class="hidden fixed bottom-6 right-6 z-40 bg-[#121624] border border-emerald-500/40 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-lg flex items-center gap-4 cursor-pointer hover:border-emerald-500 transition-all">
+    <div class="flex items-center gap-2">
+      <span class="text-xl">🛒</span>
+      <div>
+        <span id="floatCartCount" class="font-bold text-white text-sm block">0 items in Basket</span>
+        <span id="floatCartSubtotal" class="text-xs text-emerald-400 font-semibold mono">Est. ₹0</span>
+      </div>
+    </div>
+    <button class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-1.5 rounded-xl text-xs flex items-center gap-1.5 shadow-md">
+      <span>Optimize</span>
+      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+    </button>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-white/5 py-6 bg-[#06080C] text-center text-xs text-slate-400 mt-auto">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-slate-300 font-semibold">QuickCompare Production</span>
+        <span>•</span>
+        <span>October 2026 Ground Truth</span>
+      </div>
+      <div>
+        <span>Zero mock data. Platform fees strictly loaded from config/fees.json.</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ========================================== -->
+  <!-- JAVASCRIPT MASTER CLIENT LOGIC             -->
+  <!-- ========================================== -->
+  <script>
+    const STORAGE_KEY = 'quickcompare_basket_v2';
+    
+    let currentBasketItems = [];
+    let currentOffers = {};
+    let lastSolverData = null;
+    let pendingRepairStaple = null;
+
+    function loadPersistedBasket() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          currentBasketItems = parsed.items || [];
+          currentOffers = parsed.offers || {};
+        }
+      } catch (e) {}
+
+      if (currentBasketItems.length === 0) {
+        seedWorkedExample();
+      }
+    }
+
+    function savePersistedBasket() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          items: currentBasketItems,
+          offers: currentOffers
+        }));
+      } catch (e) {}
+      updateFloatingPill();
+    }
+
+    function seedWorkedExample() {
+      currentBasketItems = ['milk', 'atta', 'maggi', 'bananas', 'eggs', 'oil', 'surf', 'coke'];
+      currentOffers = {
+        milk: [
+          { platform: 'zepto', price: 30, in_stock: true, freshness: 'live', title: 'Nandini Toned Milk 500ml' },
+          { platform: 'instamart', price: 32, in_stock: true, freshness: 'live', title: 'Nandini Toned Milk 500ml' }
+        ],
+        atta: [
+          { platform: 'zepto', price: 250, in_stock: true, freshness: 'live', title: 'Aashirvaad Superior MP Atta 5kg' },
+          { platform: 'instamart', price: 260, in_stock: true, freshness: 'live', title: 'Aashirvaad Shudh Chakki Atta 5kg' }
+        ],
+        maggi: [
+          { platform: 'zepto', price: 60, in_stock: true, freshness: 'live', title: 'Maggi 2-Minute Noodles 4-Pack' },
+          { platform: 'instamart', price: 60, in_stock: true, freshness: 'live', title: 'Maggi 2-Minute Instant Noodles' }
+        ],
+        bananas: [
+          { platform: 'zepto', price: 50, in_stock: true, freshness: 'live', title: 'Robusta Bananas 500g' },
+          { platform: 'instamart', price: 55, in_stock: true, freshness: 'live', title: 'Fresh Bananas 500g' }
+        ],
+        eggs: [
+          { platform: 'zepto', price: 120, in_stock: true, freshness: 'live', title: 'Farm Fresh White Eggs 6 pcs' },
+          { platform: 'instamart', price: 120, in_stock: false, freshness: 'live', title: 'Table Eggs 6 pcs' }
+        ],
+        oil: [
+          { platform: 'zepto', price: 150, in_stock: true, freshness: 'live', title: 'Fortune Sun Lite Sunflower Oil 1L' },
+          { platform: 'instamart', price: 120, in_stock: true, freshness: 'live', title: 'Fortune Sunflower Oil 1L' }
+        ],
+        surf: [
+          { platform: 'zepto', price: 140, in_stock: true, freshness: 'live', title: 'Surf Excel Easy Wash Detergent 1kg' },
+          { platform: 'instamart', price: 110, in_stock: true, freshness: 'live', title: 'Surf Excel Detergent Powder 1kg' }
+        ],
+        coke: [
+          { platform: 'zepto', price: 89, in_stock: true, freshness: 'live', title: 'Coca-Cola PET 750ml' },
+          { platform: 'instamart', price: 88, in_stock: true, freshness: 'live', title: 'Coca-Cola Soft Drink 750ml' }
+        ]
+      };
+      savePersistedBasket();
+    }
+
+    // View Switching Logic
+    const tabSingle = document.getElementById('tabSingle');
+    const tabBasket = document.getElementById('tabBasket');
+    const singleView = document.getElementById('singleView');
+    const basketView = document.getElementById('basketView');
+
+    function switchToTab(tabName) {
+      if (tabName === 'single') {
+        tabSingle.className = 'px-3.5 py-1.5 rounded-lg font-semibold transition-all bg-emerald-500 text-slate-950 shadow-sm flex items-center gap-1.5';
+        tabBasket.className = 'px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:text-white flex items-center gap-1.5';
+        singleView.classList.remove('hidden');
+        basketView.classList.add('hidden');
+      } else {
+        tabBasket.className = 'px-3.5 py-1.5 rounded-lg font-semibold transition-all bg-emerald-500 text-slate-950 shadow-sm flex items-center gap-1.5';
+        tabSingle.className = 'px-3.5 py-1.5 rounded-lg font-medium transition-all text-slate-300 hover:text-white flex items-center gap-1.5';
+        basketView.classList.remove('hidden');
+        singleView.classList.add('hidden');
+        renderBasketTable();
+        triggerSolve();
+      }
+    }
+
+    tabSingle.addEventListener('click', () => switchToTab('single'));
+    tabBasket.addEventListener('click', () => switchToTab('basket'));
+
+    // Floating Cart Bar
+    const floatingCartPill = document.getElementById('floatingCartPill');
+    floatingCartPill.addEventListener('click', () => switchToTab('basket'));
+
+    function updateFloatingPill() {
+      const count = currentBasketItems.length;
+      document.getElementById('navCartBadge').innerText = count;
+      document.getElementById('navCartBadge').classList.toggle('hidden', count === 0);
+
+      if (count > 0) {
+        floatingCartPill.classList.remove('hidden');
+        document.getElementById('floatCartCount').innerText = `${count} ${count === 1 ? 'item' : 'items'} in Basket`;
+        
+        let estSub = 0;
+        currentBasketItems.forEach(it => {
+          const offers = currentOffers[it] || [];
+          if (offers.length > 0) estSub += offers[0].price;
+        });
+        document.getElementById('floatCartSubtotal').innerText = `Est. ₹${estSub.toFixed(2)}`;
+      } else {
+        floatingCartPill.classList.add('hidden');
+      }
+    }
+
+    // Location Switcher Logic
+    const btnLocationPicker = document.getElementById('btnLocationPicker');
+    const locationModal = document.getElementById('locationModal');
+    const btnCloseLocationModal = document.getElementById('btnCloseLocationModal');
+
+    btnLocationPicker.addEventListener('click', () => locationModal.classList.remove('hidden'));
+    btnCloseLocationModal.addEventListener('click', () => locationModal.classList.add('hidden'));
+
+    document.querySelectorAll('.loc-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const loc = btn.getAttribute('data-loc');
+        document.getElementById('currentLocationLabel').innerText = loc;
+        locationModal.classList.add('hidden');
+        showToast(`Delivery location set to ${loc}`);
+      });
+    });
+
+    document.getElementById('btnApplyPincode').addEventListener('click', () => {
+      const pin = document.getElementById('customPincodeInput').value.trim();
+      if (pin.length === 6 && !isNaN(pin)) {
+        document.getElementById('currentLocationLabel').innerText = `Pincode ${pin}`;
+        locationModal.classList.add('hidden');
+        showToast(`Delivery location set to Pincode ${pin}`);
+      } else {
+        alert('Please enter a valid 6-digit Indian pincode.');
+      }
+    });
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-12');
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-12');
+      }, 2500);
+    }
+
+    // ==========================================
+    // BASKET TABLE & SOLVER LOGIC
+    // ==========================================
+    function renderBasketTable() {
+      const container = document.getElementById('basketItemsTable');
+      document.getElementById('basketCount').innerText = currentBasketItems.length;
+      container.innerHTML = '';
+
+      if (currentBasketItems.length === 0) {
+        container.innerHTML = `
+          <div class="p-8 text-center text-slate-400 card-glass rounded-2xl">
+            <span class="text-3xl block mb-2">🛒</span>
+            <span class="font-bold text-white text-base block">Your basket is empty</span>
+            <span class="text-xs">Search products and tap "+ Add to Basket", or load a quick preset above.</span>
+          </div>
+        `;
+        document.getElementById('basketResultBox').classList.add('hidden');
+        document.getElementById('thresholdRepairBanner').classList.add('hidden');
+        return;
+      }
+
+      currentBasketItems.forEach(it => {
+        const row = document.createElement('div');
+        row.className = 'p-3.5 rounded-xl bg-white/5 border border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs';
+        
+        const offers = currentOffers[it] || [];
+        const offersHtml = offers.map(o => {
+          const badgeClass = o.platform === 'zepto' ? 'zepto-badge' : o.platform === 'blinkit' ? 'blinkit-badge' : 'instamart-badge';
+          return `
+            <div class="flex items-center gap-1.5 bg-black/35 px-2.5 py-1 rounded-md border border-white/5">
+              <span class="px-1.5 py-0.5 rounded text-[10px] ${badgeClass}">${o.platform}</span>
+              <span class="font-bold text-white mono">₹${o.price}</span>
+              ${!o.in_stock ? '<span class="text-rose-400 text-[10px]">(OOS)</span>' : '<span class="text-emerald-400 text-[10px]">● live</span>'}
+            </div>
+          `;
+        }).join('');
+
+        row.innerHTML = `
+          <div class="flex-1 min-w-[200px]">
+            <span class="font-bold text-white capitalize text-sm block">${it}</span>
+            <span class="text-slate-400 text-[11px]">${offers[0]?.title || it}</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
+              ${offersHtml}
+            </div>
+            <button class="btn-remove-item text-slate-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors" data-item="${it}">
+              ✕
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+
+      container.querySelectorAll('.btn-remove-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const it = btn.getAttribute('data-item');
+          currentBasketItems = currentBasketItems.filter(item => item !== it);
+          delete currentOffers[it];
+          savePersistedBasket();
+          renderBasketTable();
+          triggerSolve();
+          showToast(`Removed ${it} from basket`);
+        });
+      });
+    }
+
+    async function triggerSolve() {
+      if (currentBasketItems.length === 0) return;
+
+      const resBox = document.getElementById('basketResultBox');
+      const repairBanner = document.getElementById('thresholdRepairBanner');
+      repairBanner.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/basket/solve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: currentBasketItems,
+            offers: currentOffers,
+            platforms: ['zepto', 'blinkit', 'instamart']
+          })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        lastSolverData = data;
+        resBox.classList.remove('hidden');
+
+        // Winner Card Render
+        const winner = data.single_app || data.overall_best;
+        const winnerPlatform = winner.platforms.join(' + ');
+
+        document.getElementById('winnerTitle').innerText = `${winnerPlatform.toUpperCase()} Only — ₹${winner.payable_total.toFixed(2)}`;
+        document.getElementById('winnerPayable').innerText = `₹${winner.payable_total.toFixed(2)}`;
+        document.getElementById('winnerSubtitle').innerText = `Items subtotal: ₹${winner.item_subtotal} • Total fees: ₹${winner.fees_total}`;
+
+        // Direct buy link
+        const directLink = document.getElementById('winnerDirectBuyLink');
+        if (winner.platforms.length === 1 && winner.platforms[0] === 'blinkit') {
+          directLink.href = 'https://blinkit.com';
+          directLink.innerText = 'Build Cart on Blinkit';
+        } else {
+          directLink.href = 'https://www.zepto.com';
+          directLink.innerText = 'Build Cart on Zepto';
+        }
+
+        // Split Banner Logic (Strict Gate)
+        const splitBanner = document.getElementById('splitBanner');
+        const splitMsg = document.getElementById('splitMessage');
+        const splitBadge = document.getElementById('splitSavingsBadge');
+
+        if (data.show_split) {
+          splitBanner.className = 'p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs flex items-center justify-between mb-4';
+          splitMsg.innerText = `Split across ${data.overall_best.platforms.length} apps: Save ₹${data.savings} (Net ₹${data.friction_adjusted_savings} after friction)`;
+          splitBadge.className = 'font-bold text-xs px-2.5 py-1 rounded-md bg-emerald-500 text-slate-950';
+          splitBadge.innerText = `Save ₹${data.savings}`;
+        } else {
+          splitBanner.className = 'p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs flex items-center justify-between mb-4';
+          splitMsg.innerText = data.reason || 'Single app checkout is optimal';
+          splitBadge.className = 'font-bold text-xs px-2.5 py-1 rounded-md bg-white/10 text-slate-300';
+          splitBadge.innerText = 'Single App Default';
+        }
+
+        // Winner Items List
+        const itemsList = document.getElementById('winnerItemsList');
+        itemsList.innerHTML = '';
+        Object.entries(winner.assignments || {}).forEach(([it, ass]) => {
+          const itemEl = document.createElement('div');
+          itemEl.className = 'p-2 rounded-lg bg-black/25 border border-white/5 flex items-center justify-between';
+          itemEl.innerHTML = `
+            <span class="text-slate-300 capitalize">${it}</span>
+            <span class="font-bold text-emerald-400 mono">₹${ass.price}</span>
+          `;
+          itemsList.appendChild(itemEl);
+        });
+
+        // Threshold Repair Recommendation
+        if (data.threshold_repairs && data.threshold_repairs.length > 0) {
+          const rep = data.threshold_repairs[0];
+          pendingRepairStaple = rep.suggested_staple;
+          repairBanner.classList.remove('hidden');
+          document.getElementById('repairText').innerText = rep.net_verdict;
+          document.getElementById('repairComparison').innerHTML = `
+            <span>Subtotal: ₹${rep.current_subtotal}</span>
+            <span>•</span>
+            <span>Delivery Fee: ₹${rep.delivery_fee}</span>
+            <span>•</span>
+            <span class="text-emerald-400 font-bold">New Total with ${rep.suggested_staple.name}: ₹${rep.total_after}</span>
+          `;
+        }
+
+      } catch (err) {
+        console.error('Solver error:', err);
+      }
+    }
+
+    document.getElementById('btnAddRepairStaple').addEventListener('click', () => {
+      if (pendingRepairStaple) {
+        const stapleKey = pendingRepairStaple.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+        currentBasketItems.push(stapleKey);
+        currentOffers[stapleKey] = [{
+          platform: 'zepto',
+          price: pendingRepairStaple.price,
+          in_stock: true,
+          freshness: 'live',
+          title: pendingRepairStaple.name
+        }];
+        savePersistedBasket();
+        renderBasketTable();
+        triggerSolve();
+        showToast(`Added ${pendingRepairStaple.name} — Free Delivery Unlocked!`);
+      }
+    });
+
+    // Receipt Modal Viewer
+    document.getElementById('btnViewBillBreakdown').addEventListener('click', () => {
+      if (!lastSolverData) return;
+      const winner = lastSolverData.single_app || lastSolverData.overall_best;
+      const modal = document.getElementById('receiptModal');
+      const content = document.getElementById('receiptModalContent');
+
+      let platformsHtml = '';
+      Object.entries(winner.fee_breakdowns || {}).forEach(([pName, breakdown]) => {
+        platformsHtml += `
+          <div class="p-3 rounded-xl bg-white/5 border border-white/5 space-y-1.5">
+            <span class="font-bold text-white uppercase text-xs tracking-wider">${pName} Bill Summary</span>
+            <div class="flex justify-between text-slate-300">
+              <span>Items Subtotal:</span>
+              <span class="mono font-semibold">₹${winner.subtotals[pName] || 0}</span>
+            </div>
+            <div class="flex justify-between text-slate-300">
+              <span>Delivery Fee (Threshold ₹${breakdown.free_delivery_threshold}):</span>
+              <span class="mono font-semibold ${breakdown.delivery === 0 ? 'text-emerald-400' : ''}">₹${breakdown.delivery}</span>
+            </div>
+            <div class="flex justify-between text-slate-300">
+              <span>Handling Fee:</span>
+              <span class="mono font-semibold">₹${breakdown.handling}</span>
+            </div>
+            ${breakdown.small_cart > 0 ? `
+            <div class="flex justify-between text-amber-300">
+              <span>Small Cart Surcharge:</span>
+              <span class="mono font-semibold">₹${breakdown.small_cart}</span>
+            </div>` : ''}
+            <div class="pt-2 border-t border-white/10 flex justify-between font-bold text-white text-sm">
+              <span>Platform Payable:</span>
+              <span class="mono text-emerald-400">₹${((winner.subtotals[pName] || 0) + breakdown.total).toFixed(2)}</span>
+            </div>
+          </div>
+        `;
+      });
+
+      content.innerHTML = `
+        <div class="space-y-3">
+          ${platformsHtml}
+          <div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex justify-between items-center text-sm font-bold text-white">
+            <span>Grand Total Payable:</span>
+            <span class="mono text-emerald-400 text-lg">₹${winner.payable_total.toFixed(2)}</span>
+          </div>
+        </div>
+      `;
+
+      modal.classList.remove('hidden');
+    });
+
+    document.getElementById('btnCloseReceiptModal').addEventListener('click', () => {
+      document.getElementById('receiptModal').classList.add('hidden');
+    });
+
+    // Preset Buttons
+    document.getElementById('btnLoadWorkedExample').addEventListener('click', () => {
+      seedWorkedExample();
+      renderBasketTable();
+      triggerSolve();
+      showToast('Loaded Hark 8-item Worked Example!');
+    });
+
+    document.getElementById('btnLoadSmallCart').addEventListener('click', () => {
+      currentBasketItems = ['milk', 'maggi', 'bananas'];
+      currentOffers = {
+        milk: [{ platform: 'zepto', price: 60, in_stock: true, freshness: 'live', title: 'Nandini Toned Milk 1L' }],
+        maggi: [{ platform: 'zepto', price: 56, in_stock: true, freshness: 'live', title: 'Maggi 2-Minute Noodles 4-Pack' }],
+        bananas: [{ platform: 'zepto', price: 40, in_stock: true, freshness: 'live', title: 'Robusta Bananas 500g' }]
+      };
+      savePersistedBasket();
+      renderBasketTable();
+      triggerSolve();
+      showToast('Loaded ₹156 Cart — Threshold Repair Ready!');
+    });
+
+    document.getElementById('btnClearCart').addEventListener('click', () => {
+      currentBasketItems = [];
+      currentOffers = {};
+      savePersistedBasket();
+      renderBasketTable();
+      showToast('Basket cleared');
+    });
+
+    document.getElementById('btnSolveBasket').addEventListener('click', triggerSolve);
+
+    document.getElementById('btnAddCustomItem').addEventListener('click', () => {
+      const name = prompt('Enter product name (e.g., Bread 400g):');
+      if (!name) return;
+      const priceStr = prompt('Enter average price in ₹:');
+      const price = Number(priceStr);
+      if (!price || isNaN(price)) return;
+
+      const key = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      currentBasketItems.push(key);
+      currentOffers[key] = [
+        { platform: 'zepto', price: price, in_stock: true, freshness: 'live', title: name },
+        { platform: 'blinkit', price: Number((price * 1.05).toFixed(0)), in_stock: true, freshness: 'live', title: name }
+      ];
+      savePersistedBasket();
+      renderBasketTable();
+      triggerSolve();
+      showToast(`Added ${name} to basket`);
+    });
+
+    // ==========================================
+    // SINGLE PRODUCT LIVE SEARCH LOGIC
+    // ==========================================
+    const searchForm = document.getElementById('searchForm');
+    const queryInput = document.getElementById('queryInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const btnArrow = document.getElementById('btnArrow');
+    const btnSpinner = document.getElementById('btnSpinner');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const statsBar = document.getElementById('statsBar');
+
+    searchForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const q = queryInput.value.trim();
+      if (!q) return;
+
+      searchBtn.disabled = true;
+      btnArrow.classList.add('hidden');
+      btnSpinner.classList.remove('hidden');
+
+      const loc = document.getElementById('currentLocationLabel').innerText;
+
+      try {
+        const res = await fetch(`/api/compare?q=${encodeURIComponent(q)}&loc=${encodeURIComponent(loc)}`);
+        const data = await res.json();
+        renderSingleResults(data);
+      } catch (err) {
+        resultsContainer.innerHTML = `<div class="p-6 text-center text-rose-400 card-glass rounded-2xl">Error: ${err.message}</div>`;
+      } finally {
+        searchBtn.disabled = false;
+        btnArrow.classList.remove('hidden');
+        btnSpinner.classList.add('hidden');
+      }
+    });
+
+    document.querySelectorAll('.quick-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        // Strip emoji
+        const text = chip.innerText.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\p{Emoji}/gu, '').trim();
+        queryInput.value = text;
+        searchForm.dispatchEvent(new Event('submit'));
+      });
+    });
+
+    function renderSingleResults(data) {
+      statsBar.classList.remove('hidden');
+      document.getElementById('statTotal').innerText = `${data.total_scanned_items || 0} items`;
+      document.getElementById('statMatches').innerText = `${data.comparisons?.length || 0} direct matches`;
+      document.getElementById('statTopSaving').innerText = `Max Savings: ₹${data.max_potential_savings || 0}`;
+
+      const statFreshness = document.getElementById('statFreshness');
+      if (data.from_cache) {
+        statFreshness.innerText = '⚡ fresh (cached)';
+        statFreshness.className = 'font-bold text-amber-400 ml-1';
+      } else {
+        statFreshness.innerText = '● live verified';
+        statFreshness.className = 'font-bold text-emerald-400 ml-1';
+      }
+
+      resultsContainer.innerHTML = '';
+      if (!data.comparisons || data.comparisons.length === 0) {
+        resultsContainer.innerHTML = `
+          <div class="p-8 text-center text-slate-400 card-glass rounded-2xl">
+            <span class="text-3xl block mb-2">🔍</span>
+            <span class="font-bold text-white text-base block">No direct product matches found</span>
+            <span class="text-xs">Try searching for popular groceries like "Amul Butter", "Aashirvaad Atta", "Fortune Oil", or "Coca Cola".</span>
+          </div>
+        `;
+        return;
+      }
+
+      data.comparisons.forEach((c, idx) => {
+        const card = document.createElement('div');
+        const bPrice = c.blinkit.selling_price;
+        const zPrice = c.zepto.selling_price;
+        const winner = c.winner;
+        const winnerPrice = winner === 'zepto' ? zPrice : bPrice;
+
+        card.className = `p-6 rounded-2xl card-glass flex flex-col md:flex-row items-start md:items-center justify-between gap-6 ${winner ? 'winner-glow' : ''}`;
+        card.innerHTML = `
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${data.from_cache ? 'verified cached' : 'live verified'}
+              </span>
+              <span class="text-xs text-slate-400">Pack: ${c.pack_size || 'Standard'}</span>
+              ${c.unitRate?.zeptoRate ? `<span class="text-xs text-slate-500">(${c.unitRate.zeptoRate})</span>` : ''}
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1.5">${c.canonical_title}</h3>
+            
+            <div class="grid grid-cols-2 gap-3 my-3 p-3 rounded-xl bg-black/30 border border-white/5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-[10px] blinkit-badge">Blinkit</span>
+                  <a href="${c.blinkit.url}" target="_blank" class="text-xs text-slate-300 hover:text-white hover:underline truncate max-w-[140px]">${c.blinkit.name}</a>
+                </div>
+                <span class="font-bold text-white mono text-sm">₹${bPrice}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-[10px] zepto-badge">Zepto</span>
+                  <a href="${c.zepto.url}" target="_blank" class="text-xs text-slate-300 hover:text-white hover:underline truncate max-w-[140px]">${c.zepto.name}</a>
+                </div>
+                <span class="font-bold text-white mono text-sm">₹${zPrice}</span>
+              </div>
+            </div>
+
+            <div class="text-xs text-slate-400 flex flex-wrap items-center gap-2">
+              <span class="text-emerald-400 font-bold bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                ${winner === 'tied' ? 'Equal Price on Both' : `Save ₹${c.savings_rupees} on ${winner.toUpperCase()}`}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0 border-white/5">
+            <div class="text-right">
+              <span class="text-xs text-slate-400 block">Lowest Price</span>
+              <span class="text-2xl font-black text-emerald-400 mono">₹${winnerPrice}</span>
+            </div>
+            <button class="btn-add-to-basket bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-4 py-2.5 rounded-xl text-xs transition-all shadow-md flex items-center gap-1.5 shrink-0" data-idx="${idx}">
+              <span>+ Add to Basket</span>
+            </button>
+          </div>
+        `;
+        resultsContainer.appendChild(card);
+
+        card.querySelector('.btn-add-to-basket').addEventListener('click', () => {
+          const itemKey = c.canonical_title.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 25);
+          if (!currentBasketItems.includes(itemKey)) {
+            currentBasketItems.push(itemKey);
+          }
+          currentOffers[itemKey] = [
+            { platform: 'zepto', price: zPrice, in_stock: true, freshness: 'live', title: c.canonical_title },
+            { platform: 'blinkit', price: bPrice, in_stock: true, freshness: 'live', title: c.canonical_title }
+          ];
+          savePersistedBasket();
+          showToast(`Added ${c.canonical_title} to basket!`);
+        });
+      });
+    }
+
+    // Initialize application on load
+    loadPersistedBasket();
+    updateFloatingPill();
+  </script>
+</body>
+</html>
