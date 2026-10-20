@@ -389,10 +389,15 @@ export function repairThresholds(plan, userStaples = [], ctx = {}) {
       // Fee reduction
       const feeSaved = Number((feeInfo.total - newFeeInfo.total).toFixed(2));
       const additionalCashOut = Number((newSubtotal + newFeeInfo.total - (subtotal + feeInfo.total)).toFixed(2));
-      const effectiveItemCost = additionalCashOut; // What the user actually pays for this staple today
+      const effectiveItemCost = additionalCashOut; // Real incremental spend to get this staple today
 
-      // Show ONLY when effective cost is lower than buying the item later at its normal price
-      if (effectiveItemCost < bestStaple.price && feeSaved > 0) {
+      // Honest, non-tautological qualification:
+      // Must unlock real delivery fee savings (feeSaved > 0), deficit must be positive, and feeSaved must significantly offset item cost (at least 30% discount or >= ₹20 savings)
+      if (feeSaved > 0 && deficit > 0 && (effectiveItemCost <= 0 || feeSaved >= 20 || (feeSaved / bestStaple.price) >= 0.30)) {
+        const netVerdict = effectiveItemCost <= 0 
+          ? `Add ${bestStaple.name} (₹${bestStaple.price}) to waive ₹${feeInfo.delivery} delivery fee — FREE with net cash savings of ₹${Math.abs(effectiveItemCost)}!`
+          : `Add ${bestStaple.name} (₹${bestStaple.price}) to waive ₹${feeInfo.delivery} delivery fee — you get a ₹${bestStaple.price} staple for just ₹${effectiveItemCost}!`;
+
         suggestions.push({
           platform: platformId,
           platform_name: feesConfig.platforms[platformId]?.name || platformId,
@@ -411,7 +416,7 @@ export function repairThresholds(plan, userStaples = [], ctx = {}) {
           new_delivery_fee: newFeeInfo.delivery,
           total_before: Number((subtotal + feeInfo.total).toFixed(2)),
           total_after: Number((newSubtotal + newFeeInfo.total).toFixed(2)),
-          net_verdict: `Add ${bestStaple.name} (₹${bestStaple.price}) to delete ₹${feeInfo.delivery} delivery fee — effectively getting it for just ₹${effectiveItemCost}!`
+          net_verdict: netVerdict
         });
       }
     }

@@ -233,7 +233,7 @@
           <div class="h-3 w-px bg-white/10"></div>
           <div>
             <span class="text-slate-400">Freshness:</span>
-            <span id="statFreshness" class="font-bold text-emerald-400 ml-1">● live</span>
+            <span id="statFreshness" class="font-bold text-slate-400 ml-1">—</span>
           </div>
         </div>
         <div id="statTopSaving" class="font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
@@ -314,8 +314,8 @@
                 <span class="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-bold uppercase tracking-wider">
                   Cheapest Checkout Winner
                 </span>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> live verified
+                <span id="winnerFreshnessBadge" class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> <span id="winnerFreshnessText">MILP Solved</span>
                 </span>
               </div>
               <h3 id="winnerTitle" class="text-2xl font-extrabold text-white">ZEPTO Only — ₹889.00</h3>
@@ -433,6 +433,21 @@
         }
       } catch (e) {}
       return '#';
+    }
+
+    function formatTime(isoStr) {
+      if (!isoStr) return 'just now';
+      try {
+        const d = new Date(isoStr);
+        const now = new Date();
+        const diffSec = Math.max(0, Math.floor((now - d) / 1000));
+        if (diffSec < 60) return 'just now';
+        if (diffSec < 3600) return `${Math.floor(diffSec / 60)} min ago`;
+        if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} hr ago`;
+        return `${Math.floor(diffSec / 86400)}d ago`;
+      } catch (e) {
+        return 'recently';
+      }
     }
     
     let currentBasketItems = [];
@@ -616,13 +631,25 @@
         row.className = 'p-3.5 rounded-xl bg-white/5 border border-white/5 flex flex-wrap items-center justify-between gap-3 text-xs';
         
         const offers = currentOffers[it] || [];
-        const offersHtml = offers.map(o => {
-          const badgeClass = o.platform === 'zepto' ? 'zepto-badge' : o.platform === 'blinkit' ? 'blinkit-badge' : 'instamart-badge';
+        const activePlatforms = ['zepto', 'blinkit', 'instamart'];
+        const offersHtml = activePlatforms.map(p => {
+          const o = offers.find(item => item.platform === p);
+          const badgeClass = p === 'zepto' ? 'zepto-badge' : p === 'blinkit' ? 'blinkit-badge' : 'instamart-badge';
+          if (!o) {
+            return `
+              <div class="flex items-center gap-1.5 bg-black/35 px-2.5 py-1 rounded-md border border-white/5 opacity-40">
+                <span class="px-1.5 py-0.5 rounded text-[10px] ${badgeClass}">${p}</span>
+                <span class="text-slate-400 italic text-[11px]">Not available</span>
+              </div>
+            `;
+          }
+          const tLabel = o.freshness === 'user' ? '👤 user' : (o.freshness === 'live' ? `● live (${formatTime(o.observed_at)})` : `⚡ cached (${formatTime(o.observed_at)})`);
+          const tColor = o.freshness === 'user' ? 'text-sky-400' : (o.freshness === 'live' ? 'text-emerald-400' : 'text-amber-400');
           return `
             <div class="flex items-center gap-1.5 bg-black/35 px-2.5 py-1 rounded-md border border-white/5">
               <span class="px-1.5 py-0.5 rounded text-[10px] ${badgeClass}">${o.platform}</span>
               <span class="font-bold text-white mono">₹${o.price}</span>
-              ${!o.in_stock ? '<span class="text-rose-400 text-[10px]">(OOS)</span>' : (o.freshness === 'live' ? '<span class="text-emerald-400 text-[10px]">● live</span>' : (o.freshness === 'user' ? '<span class="text-sky-400 text-[10px]">👤 user</span>' : '<span class="text-amber-400 text-[10px]">⚡ cached</span>'))}
+              ${!o.in_stock ? '<span class="text-rose-400 text-[10px]">(OOS)</span>' : `<span class="${tColor} text-[10px]">${tLabel}</span>`}
             </div>
           `;
         }).join('');
@@ -992,14 +1019,15 @@
       document.getElementById('statTopSaving').innerText = `Max Savings: ₹${data.max_potential_savings || 0}`;
 
       const statFreshness = document.getElementById('statFreshness');
+      const timeStr = formatTime(data.observed_at || data.timestamp);
       if (data.source === 'snapshot' || data.freshness === 'stale') {
-        statFreshness.innerText = '📋 static snapshot (stale)';
+        statFreshness.innerText = `📋 Snapshot, checked ${timeStr}`;
         statFreshness.className = 'font-bold text-amber-400 ml-1';
       } else if (data.from_cache) {
-        statFreshness.innerText = '⚡ cached fresh';
+        statFreshness.innerText = `⚡ Cached (${timeStr})`;
         statFreshness.className = 'font-bold text-sky-400 ml-1';
       } else {
-        statFreshness.innerText = '● live scraped';
+        statFreshness.innerText = `● Live scraped (${timeStr})`;
         statFreshness.className = 'font-bold text-emerald-400 ml-1';
       }
 
@@ -1023,9 +1051,10 @@
         const winnerPrice = winner === 'zepto' ? zPrice : bPrice;
 
         const isSnapshot = data.source === 'snapshot' || data.freshness === 'stale';
+        const cardTime = formatTime(c.observed_at || data.observed_at || data.timestamp);
         const badgeColor = isSnapshot ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : (data.from_cache ? 'bg-sky-500/10 text-sky-300 border-sky-500/30' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30');
         const dotColor = isSnapshot ? 'bg-amber-400' : (data.from_cache ? 'bg-sky-400' : 'bg-emerald-400');
-        const badgeText = isSnapshot ? 'static snapshot' : (data.from_cache ? 'cached' : 'live scraped');
+        const badgeText = isSnapshot ? `Snapshot, checked ${cardTime}` : (data.from_cache ? `Cached (${cardTime})` : `Live scraped (${cardTime})`);
 
         card.className = `p-6 rounded-2xl card-glass flex flex-col md:flex-row items-start md:items-center justify-between gap-6 ${winner ? 'winner-glow' : ''}`;
         card.innerHTML = `

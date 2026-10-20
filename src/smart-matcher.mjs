@@ -613,8 +613,15 @@ export function matchProductsCommercial(blinkitItems, zeptoItems, query = '') {
           blinkitRate: bUnitRate ? `₹${bUnitRate} / ${bNorm.unit === 'pc' ? 'pc' : '100' + bNorm.unit}` : null,
           zeptoRate: zUnitRate ? `₹${zUnitRate} / ${zNorm.unit === 'pc' ? 'pc' : '100' + zNorm.unit}` : null
         },
-        blinkit: b,
-        zepto: bestMatch
+        unit_price: {
+          unit: bNorm.unit || 'g',
+          blinkit: bUnitRate ? `₹${bUnitRate} / ${bNorm.unit === 'pc' ? 'pc' : '100' + bNorm.unit}` : null,
+          zepto: zUnitRate ? `₹${zUnitRate} / ${zNorm.unit === 'pc' ? 'pc' : '100' + zNorm.unit}` : null,
+          blinkit_per_100: bUnitRate,
+          zepto_per_100: zUnitRate
+        },
+        blinkit: { ...b, unit_price: bUnitRate ? `₹${bUnitRate} / ${bNorm.unit === 'pc' ? 'pc' : '100' + bNorm.unit}` : null },
+        zepto: { ...bestMatch, unit_price: zUnitRate ? `₹${zUnitRate} / ${zNorm.unit === 'pc' ? 'pc' : '100' + zNorm.unit}` : null }
       });
     }
   }

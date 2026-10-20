@@ -117,4 +117,28 @@ const t15 = evaluatePairMatch(
 );
 assert(t15.match, 'Promo pack 1 kg + 200 g free matches 1 kg');
 
-console.log('\n🎉 ALL 15 TESTS PASSED WITH 100% PRECISION! ZERO FALSE MATCHES GUARANTEED!');
+// Test 16: Unsalted Cooking Butter vs Table Butter (MUST REJECT)
+const t16 = evaluatePairMatch(
+  { name: 'Amul Cooking Butter - Unsalted', weight: '500 g' },
+  { name: 'Amul Butter - Pasteurized (Salted)', weight: '500 g' }
+);
+assert(!t16.match, 'Unsalted Cooking Butter vs Table Butter is REJECTED');
+
+// Test 17: Amul Butter vs Amul Lite Milk Fat Spread (MUST REJECT)
+const t17 = evaluatePairMatch(
+  { name: 'Amul Butter - Pasteurized', weight: '500 g' },
+  { name: 'Amul Lite Milk Fat Spread', weight: '500 g' },
+  'Amul Butter'
+);
+assert(!t17.match, 'Amul Butter vs Amul Lite Fat Spread is REJECTED');
+
+// Test 18: Anti-shrinkflation Unit-Rate: 450g @ Rs 50 vs 500g @ Rs 52 (Picks 500g)
+const t18 = matchProductsCommercial(
+  [{ name: 'Good Life Refined Sugar', weight: '450 g', price: 50 }],
+  [{ name: 'Good Life Refined Sugar', weight: '500 g', price: 52 }]
+);
+assert(t18.matched.length === 1, '450g vs 500g forms a valid commercial match');
+assert(t18.matched[0].winner.toLowerCase() === 'zepto', '450g @ Rs 50 vs 500g @ Rs 52 picks 500g pack (Zepto unit rate ₹10.40/100g vs Blinkit ₹11.11/100g)');
+assert(t18.matched[0].unit_price !== undefined, 'Returns unit_price object in match output');
+
+console.log('\n🎉 ALL 18 TESTS PASSED WITH 100% PRECISION! ZERO FALSE MATCHES GUARANTEED!');

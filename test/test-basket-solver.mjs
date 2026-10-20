@@ -84,13 +84,14 @@ assert.strictEqual(workedResult.show_split, false, 'MUST OUTPUT ZEPTO ONLY (show
 console.log('  [PASS] Blueprint Worked Example passed: Output is Zepto only!\n');
 
 // ----------------------------------------------------
-// TEST 3: Brute Force Equivalence & Paise Fuzzing Oracle (500 instances)
+// TEST 3: Brute Force Equivalence & Paise Fuzzing Oracle (10,000 instances)
 // ----------------------------------------------------
-console.log('Test 3: Testing 500 random instances with fractional paise against Brute Force oracle...');
+console.log('Test 3: Testing 10,000 random baskets with threshold-edge prices (49.9, 99.99, 149.01, etc.) against Brute Force oracle...');
 const testPlatforms = ['zepto', 'blinkit', 'instamart', 'bbnow'];
+const thresholdEdgePrices = [49.90, 99.99, 149.01, 198.99, 199.00, 199.01, 99.50, 49.99, 100.01];
 
-for (let trial = 1; trial <= 500; trial++) {
-  const numItems = 1 + Math.floor(Math.random() * 5); // 1 to 5 items
+for (let trial = 1; trial <= 10000; trial++) {
+  const numItems = 1 + Math.floor(Math.random() * 4); // 1 to 4 items
   const numPlatforms = 2 + Math.floor(Math.random() * 3); // 2 to 4 platforms
   const activePlatforms = testPlatforms.slice(0, numPlatforms);
 
@@ -102,12 +103,18 @@ for (let trial = 1; trial <= 500; trial++) {
     trialItems.push(it);
     trialOffers[it] = [];
     for (const p of activePlatforms) {
-      // 15% out of stock
-      const inStock = Math.random() > 0.15;
-      // Random price with paise (.00, .25, .50, .75, .99, .49, .33)
-      const paiseOptions = [0, 25, 33, 49, 50, 67, 75, 99];
-      const randomPaise = paiseOptions[Math.floor(Math.random() * paiseOptions.length)];
-      const price = 20 + Math.floor(Math.random() * 150) + (randomPaise / 100);
+      // 10% out of stock
+      const inStock = Math.random() > 0.10;
+      let price;
+      if (Math.random() < 0.4) {
+        // 40% probability: pick explicit threshold edge price
+        price = thresholdEdgePrices[Math.floor(Math.random() * thresholdEdgePrices.length)];
+      } else {
+        // Random price with fractional paise
+        const paiseOptions = [0, 1, 10, 25, 33, 49, 50, 67, 75, 90, 99];
+        const randomPaise = paiseOptions[Math.floor(Math.random() * paiseOptions.length)];
+        price = 10 + Math.floor(Math.random() * 200) + (randomPaise / 100);
+      }
       trialOffers[it].push({ platform: p, price, in_stock: inStock });
     }
   }
@@ -129,7 +136,7 @@ for (let trial = 1; trial <= 500; trial++) {
     }
   }
 }
-console.log('  [PASS] All 500 fractional-paise instances matched Brute Force oracle perfectly.\n');
+console.log('  [PASS] All 10,000 threshold-edge instances matched Brute Force oracle with 0 mismatches.\n');
 
 // ----------------------------------------------------
 // TEST 3B: Exact Threshold Edge Case (Hark Repro Bug)

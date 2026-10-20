@@ -108,6 +108,11 @@ app.get('/api/compare', async (req, res) => {
         winner: winner,
         savings_rupees: savings,
         unitRate: m.unitRate || { unit: 'g', blinkitRate: null, zeptoRate: null },
+        unit_price: m.unit_price || {
+          unit: m.unitRate?.unit || 'g',
+          blinkit: m.unitRate?.blinkitRate || null,
+          zepto: m.unitRate?.zeptoRate || null
+        },
         freshness: rawData.freshness || 'live',
         observed_at: rawData.timestamp || new Date().toISOString(),
         blinkit: {
@@ -115,6 +120,7 @@ app.get('/api/compare', async (req, res) => {
           selling_price: bPrice,
           mrp: Number(m.blinkit?.mrp || bPrice),
           weight: m.blinkit?.weight || m.weight,
+          unit_price: m.unit_price?.blinkit || m.unitRate?.blinkitRate || null,
           url: m.blinkit?.url || `https://blinkit.com/s/?q=${encodeURIComponent(m.title)}`,
           image: m.blinkit?.image || '',
           in_stock: true
@@ -124,6 +130,7 @@ app.get('/api/compare', async (req, res) => {
           selling_price: zPrice,
           mrp: Number(m.zepto?.mrp || zPrice),
           weight: m.zepto?.weight || m.weight,
+          unit_price: m.unit_price?.zepto || m.unitRate?.zeptoRate || null,
           url: m.zepto?.url || `https://www.zepto.com/search?query=${encodeURIComponent(m.title)}`,
           image: m.zepto?.image || '',
           in_stock: true

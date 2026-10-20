@@ -221,7 +221,23 @@ app.get('/api/compare', async (req, res) => {
   // 2. Pre-indexed snapshots with 100% honesty
   const matched = VERIFIED_GOLDEN_SNAPSHOTS[q];
   if (matched) {
-    const maxSavings = matched.reduce((max, c) => Math.max(max, c.savings_rupees), 0);
+    const enriched = matched.map(c => ({
+      ...c,
+      unit_price: c.unit_price || {
+        unit: c.unitRate?.unit || 'g',
+        blinkit: c.unitRate?.blinkitRate || null,
+        zepto: c.unitRate?.zeptoRate || null
+      },
+      blinkit: {
+        ...c.blinkit,
+        unit_price: c.unitRate?.blinkitRate || null
+      },
+      zepto: {
+        ...c.zepto,
+        unit_price: c.unitRate?.zeptoRate || null
+      }
+    }));
+    const maxSavings = enriched.reduce((max, c) => Math.max(max, c.savings_rupees), 0);
     return res.json({
       query,
       location: loc,
@@ -229,12 +245,12 @@ app.get('/api/compare', async (req, res) => {
       freshness: 'stale',
       observed_at: '2026-10-20T06:00:00Z',
       from_cache: true,
-      total_scanned_items: matched.length * 2,
-      blinkit_count: matched.length,
-      zepto_count: matched.length,
-      matched_count: matched.length,
+      total_scanned_items: enriched.length * 2,
+      blinkit_count: enriched.length,
+      zepto_count: enriched.length,
+      matched_count: enriched.length,
       max_potential_savings: maxSavings,
-      comparisons: matched,
+      comparisons: enriched,
       note: 'Served from verified golden snapshot. For arbitrary live multi-platform scraping, connect local worker with Chrome debugging enabled.'
     });
   }
