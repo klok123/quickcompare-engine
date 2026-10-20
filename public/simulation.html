@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuickCommerce Swarm Simulation — MiroFish Live Consumer Shifting Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          },
+          colors: {
+            blinkit: { DEFAULT: '#eab308', glow: 'rgba(234, 179, 8, 0.25)' },
+            zepto: { DEFAULT: '#a855f7', glow: 'rgba(168, 85, 247, 0.25)' },
+            instamart: { DEFAULT: '#f97316', glow: 'rgba(249, 115, 22, 0.25)' },
+            bigbasket: { DEFAULT: '#06b6d4', glow: 'rgba(6, 182, 212, 0.25)' },
+            qc: { DEFAULT: '#10b981', glow: 'rgba(16, 185, 129, 0.35)' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #07090e;
+      color: #e2e8f0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .card-glass {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .card-glass:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    .pulse-live {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-black">
+
+  <!-- Header / Navigation -->
+  <header class="border-b border-white/10 sticky top-0 z-40 bg-[#07090e]/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center font-black text-black text-lg shadow-lg shadow-emerald-500/20">
+          ⚡
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-base text-white tracking-tight">QuickCommerce Swarm Simulation</h1>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono font-semibold flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> MiroFish Engine v1.0
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400">Live multi-agent consumer migration & price elasticity laboratory</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="/compare.html" class="text-xs px-3 py-1.5 rounded-xl border border-white/10 hover:border-emerald-500/30 text-slate-300 hover:text-white transition flex items-center gap-1.5 card-glass">
+          <span>🛒</span>
+          <span>Back to QuickCompare App</span>
+        </a>
+        <button id="btnOpenReport" class="text-xs px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-bold hover:brightness-110 transition shadow-md shadow-emerald-500/20 flex items-center gap-1.5">
+          <span>📊</span>
+          <span>Generate Prediction Report</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Simulation Dashboard Grid -->
+  <main class="max-w-7xl mx-auto px-4 py-5 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- LEFT COLUMN: Canvas + Market Controls (8 cols) -->
+    <div class="lg:col-span-8 flex flex-col gap-4">
+      
+      <!-- Market Share & KPI Cards Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <!-- Blinkit Share -->
+        <div class="p-3.5 rounded-2xl card-glass border-l-4 border-l-amber-400">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-slate-400 font-medium">Blinkit</span>
+            <span id="kpiBlinkitShare" class="mono font-bold text-amber-400 text-sm">34.0%</span>
+          </div>
+          <div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+            <div id="barBlinkit" class="bg-amber-400 h-full rounded-full transition-all duration-300" style="width: 34%"></div>
+          </div>
+          <span id="kpiBlinkitCount" class="text-[11px] text-slate-500 mt-1 block mono">68 shoppers</span>
+        </div>
+
+        <!-- Zepto Share -->
+        <div class="p-3.5 rounded-2xl card-glass border-l-4 border-l-purple-500">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-slate-400 font-medium">Zepto</span>
+            <span id="kpiZeptoShare" class="mono font-bold text-purple-400 text-sm">31.0%</span>
+          </div>
+          <div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+            <div id="barZepto" class="bg-purple-500 h-full rounded-full transition-all duration-300" style="width: 31%"></div>
+          </div>
+          <span id="kpiZeptoCount" class="text-[11px] text-slate-500 mt-1 block mono">62 shoppers</span>
+        </div>
+
+        <!-- Instamart Share -->
+        <div class="p-3.5 rounded-2xl card-glass border-l-4 border-l-orange-500">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-slate-400 font-medium">Instamart</span>
+            <span id="kpiInstamartShare" class="mono font-bold text-orange-400 text-sm">22.5%</span>
+          </div>
+          <div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+            <div id="barInstamart" class="bg-orange-500 h-full rounded-full transition-all duration-300" style="width: 22.5%"></div>
+          </div>
+          <span id="kpiInstamartCount" class="text-[11px] text-slate-500 mt-1 block mono">45 shoppers</span>
+        </div>
+
+        <!-- BigBasket / Split Share -->
+        <div class="p-3.5 rounded-2xl card-glass border-l-4 border-l-cyan-400">
+          <div class="flex items-center justify-between text-xs mb-1">
+            <span class="text-slate-400 font-medium">BB Now / Split</span>
+            <span id="kpiBbShare" class="mono font-bold text-cyan-400 text-sm">12.5%</span>
+          </div>
+          <div class="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
+            <div id="barBb" class="bg-cyan-400 h-full rounded-full transition-all duration-300" style="width: 12.5%"></div>
+          </div>
+          <span id="kpiBbCount" class="text-[11px] text-slate-500 mt-1 block mono">25 shoppers</span>
+        </div>
+      </div>
+
+      <!-- Live Simulation Canvas Container -->
+      <div class="relative card-glass rounded-3xl p-3 border border-white/10 shadow-2xl overflow-hidden flex flex-col">
+        <!-- Canvas Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-2 px-2 pt-1 text-xs">
+          <div class="flex items-center gap-3">
+            <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Live Swarm Field
+            </span>
+            <span id="swarmStats" class="text-slate-400 font-mono text-[11px]">200 Agents Active • Tick: 0</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btnPauseToggle" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition text-[11px] mono flex items-center gap-1">
+              <span id="pauseIcon">⏸</span> <span id="pauseText">Pause</span>
+            </button>
+            <button id="btnSpeedToggle" class="px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition text-[11px] mono">
+              Speed: <span id="speedVal" class="text-emerald-400 font-bold">1x</span>
+            </button>
+            <button id="btnResetMarket" class="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-300 transition text-[11px] mono">
+              Reset Baseline
+            </button>
+          </div>
+        </div>
+
+        <!-- The Canvas Element -->
+        <div class="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-[#05070a] rounded-2xl border border-white/5 overflow-hidden">
+          <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+          <!-- Canvas Overlay Platform Labels (Corner Bases) -->
+          <div class="absolute top-3 left-3 pointer-events-none flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-amber-500/30 text-amber-300 text-xs font-bold backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span> Blinkit Hub
+          </div>
+          <div class="absolute top-3 right-3 pointer-events-none flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-purple-500/30 text-purple-300 text-xs font-bold backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-purple-400"></span> Zepto Hub
+          </div>
+          <div class="absolute bottom-3 left-3 pointer-events-none flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-orange-500/30 text-orange-300 text-xs font-bold backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-orange-400"></span> Instamart Hub
+          </div>
+          <div class="absolute bottom-3 right-3 pointer-events-none flex items-center gap-1.5 bg-black/60 px-2.5 py-1 rounded-lg border border-cyan-500/30 text-cyan-300 text-xs font-bold backdrop-blur-sm">
+            <span class="w-2 h-2 rounded-full bg-cyan-400"></span> BigBasket / BB Now
+          </div>
+
+          <!-- QuickCompare Center Core -->
+          <div id="qcCoreBadge" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none flex items-center gap-1 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/30 text-emerald-400 text-[11px] font-bold backdrop-blur-md opacity-40 transition-all duration-500">
+            <span>✨ QuickCompare Orbit</span>
+          </div>
+
+          <!-- Click Hint -->
+          <div class="absolute bottom-3 left-1/2 -translate-x-1/2 pointer-events-none text-[10px] text-slate-500 bg-black/50 px-2 py-0.5 rounded border border-white/5">
+            Tip: Click any moving agent particle to inspect their mind & basket
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Shocks & Counterfactual Scenarios -->
+      <div class="card-glass rounded-2xl p-4 border border-white/10">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm">🧪</span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Trigger Market Shocks & "What-If" Interventions</h3>
+          </div>
+          <span class="text-[10px] text-slate-400">Watch the swarm migrate instantly</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 text-xs">
+          <!-- Shock 1: Zepto Threshold Hike -->
+          <button id="btnShockZeptoHike" class="p-3 rounded-xl bg-purple-950/30 hover:bg-purple-900/40 border border-purple-500/30 text-left transition group">
+            <div class="flex items-center justify-between font-bold text-purple-300 mb-1">
+              <span>⚡ Zepto Threshold ₹299</span>
+              <span class="text-[10px] text-purple-400/80 group-hover:translate-x-0.5 transition">Trigger →</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">Hikes free delivery threshold from ₹199 to ₹299. Punishes small snack baskets.</p>
+          </button>
+
+          <!-- Shock 2: Blinkit Night Surge -->
+          <button id="btnShockBlinkitSurge" class="p-3 rounded-xl bg-amber-950/30 hover:bg-amber-900/40 border border-amber-500/30 text-left transition group">
+            <div class="flex items-center justify-between font-bold text-amber-300 mb-1">
+              <span>🌧️ Blinkit Rain Surge +₹25</span>
+              <span class="text-[10px] text-amber-400/80 group-hover:translate-x-0.5 transition">Trigger →</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">Slaps ₹25 weather surge fee. Tests price elasticity vs 8-min speed demand.</p>
+          </button>
+
+          <!-- Shock 3: Swiggy One ₹99 Blitz -->
+          <button id="btnShockInstamartBlitz" class="p-3 rounded-xl bg-orange-950/30 hover:bg-orange-900/40 border border-orange-500/30 text-left transition group">
+            <div class="flex items-center justify-between font-bold text-orange-300 mb-1">
+              <span>🔥 Swiggy One ₹99 Blitz</span>
+              <span class="text-[10px] text-orange-400/80 group-hover:translate-x-0.5 transition">Trigger →</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">Waives delivery fee for orders above ₹99. Heavy subsidy pulls budget shoppers.</p>
+          </button>
+
+          <!-- Shock 4: BigBasket Staples Discount -->
+          <button id="btnShockBbDiscount" class="p-3 rounded-xl bg-cyan-950/30 hover:bg-cyan-900/40 border border-cyan-500/30 text-left transition group">
+            <div class="flex items-center justify-between font-bold text-cyan-300 mb-1">
+              <span>🌾 BigBasket Staples -15%</span>
+              <span class="text-[10px] text-cyan-400/80 group-hover:translate-x-0.5 transition">Trigger →</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-snug">Deep cuts on 5kg/10kg Atta & Oil. Attracts high-AOV monthly grocery families.</p>
+          </button>
+
+          <!-- Shock 5: Deploy QuickCompare App -->
+          <button id="btnShockQuickCompare" class="p-3 rounded-xl bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/40 text-left transition group sm:col-span-2">
+            <div class="flex items-center justify-between font-bold text-emerald-300 mb-1">
+              <span>🚀 Deploy QuickCompare Optimizer</span>
+              <span class="text-[10px] text-emerald-400 font-mono group-hover:translate-x-0.5 transition">Deploy App →</span>
+            </div>
+            <p class="text-[11px] text-slate-300 leading-snug">Exposes shrinkflation unit rates and unlocks the MILP Split-Cart. Agents migrate to optimal split deliveries!</p>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Live Agent Mind Feed & Inspector (4 cols) -->
+    <div class="lg:col-span-4 flex flex-col gap-4">
+      
+      <!-- Live Migration Stream Panel -->
+      <div class="card-glass rounded-2xl p-4 border border-white/10 flex-1 flex flex-col h-[520px]">
+        <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <h3 class="text-xs font-bold text-white uppercase tracking-wider">Live Agent Consciousness Feed</h3>
+          </div>
+          <span id="feedCountBadge" class="text-[10px] px-2 py-0.5 rounded bg-white/5 text-slate-400 mono">0 shifts</span>
+        </div>
+
+        <p class="text-[11px] text-slate-400 mb-2 leading-relaxed">
+          Real-time reasoning logs as autonomous agents calculate utility functions and switch platforms:
+        </p>
+
+        <!-- Feed Container -->
+        <div id="mindFeed" class="flex-1 overflow-y-auto custom-scroll space-y-2.5 pr-1">
+          <!-- Feed items inserted dynamically -->
+          <div class="p-3 rounded-xl bg-white/5 border border-white/5 text-xs text-slate-400 animate-pulse">
+            Simulating baseline consumer behavior across Bengaluru, Mumbai & Delhi NCR...
+          </div>
+        </div>
+      </div>
+
+      <!-- Macro Velocity Indicators -->
+      <div class="card-glass rounded-2xl p-4 border border-white/10 text-xs">
+        <h4 class="font-bold text-white mb-2 flex items-center justify-between">
+          <span>Macro Behavioral Velocity</span>
+          <span class="text-[10px] text-emerald-400 mono">Real-time</span>
+        </h4>
+        <div class="space-y-2">
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Customer Switching Velocity:</span>
+            <span id="statSwitchVelocity" class="font-bold text-white mono">14 switches/min</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Split-Cart Willingness:</span>
+            <span id="statSplitWillingness" class="font-bold text-emerald-400 mono">32% of users</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Net Friction Penalty:</span>
+            <span id="statFriction" class="font-bold text-amber-400 mono">₹25 / extra delivery</span>
+          </div>
+          <div class="flex justify-between items-center text-slate-400">
+            <span>Shrinkflation Awareness:</span>
+            <span id="statShrinkAware" class="font-bold text-purple-400 mono">Moderate (41%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- AGENT INSPECTION MODAL -->
+  <div id="agentModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="card-glass rounded-3xl p-6 border border-white/20 max-w-lg w-full shadow-2xl relative">
+      <button id="btnCloseModal" class="absolute top-4 right-4 text-slate-400 hover:text-white text-lg">✕</button>
+
+      <div class="flex items-center gap-3 mb-4">
+        <div id="modalAvatar" class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-2xl shadow-lg">
+          🧑‍💼
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 id="modalName" class="text-base font-extrabold text-white">Agent #42 — Rohan (Tech Lead)</h3>
+            <span id="modalPersonaBadge" class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">Speed-First</span>
+          </div>
+          <p id="modalLocation" class="text-xs text-slate-400">Koramangala, Bengaluru • Monthly Budget: ₹18,000</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-4 text-xs">
+        <div class="p-3 rounded-xl bg-black/40 border border-white/5">
+          <span class="text-slate-400 block text-[11px]">Current Preferred Store:</span>
+          <span id="modalStore" class="font-bold text-amber-400 text-sm mono">Blinkit</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/5">
+          <span class="text-slate-400 block text-[11px]">Price Sensitivity (ε):</span>
+          <span id="modalSensitivity" class="font-bold text-white text-sm mono">0.32 (Low)</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/5">
+          <span class="text-slate-400 block text-[11px]">Active Basket Size:</span>
+          <span id="modalBasketSize" class="font-bold text-white text-sm mono">₹460 (4 items)</span>
+        </div>
+        <div class="p-3 rounded-xl bg-black/40 border border-white/5">
+          <span class="text-slate-400 block text-[11px]">Friction Tolerance:</span>
+          <span id="modalFrictionTol" class="font-bold text-white text-sm mono">Low (Hates 2 deliveries)</span>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-xl bg-white/5 border border-white/10 mb-4 text-xs">
+        <span class="text-slate-400 block text-[11px] mb-1 font-semibold">Recent Internal Reasoning Log:</span>
+        <p id="modalReasoning" class="text-slate-200 italic leading-relaxed">
+          "Zepto had an estimated ETA of 19 mins due to rain. Blinkit promised 9 mins. Even though Blinkit was ₹14 costlier, time value won."
+        </p>
+      </div>
+
+      <div class="flex justify-end">
+        <button id="btnModalCloseAction" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition">
+          Close Inspector
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MIROFISH PREDICTION REPORT MODAL -->
+  <div id="reportModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="card-glass rounded-3xl p-6 border border-emerald-500/30 max-w-2xl w-full shadow-2xl relative max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-white/10 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">📊</span>
+          <h3 class="text-base font-extrabold text-white">MiroFish Swarm Prediction & Churn Report</h3>
+        </div>
+        <button id="btnCloseReportModal" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto custom-scroll pr-2 text-xs text-slate-300 space-y-4">
+        <div class="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
+          <h4 class="font-bold text-sm mb-1">Executive Summary: The ₹199 Churn Cliff</h4>
+          <p class="leading-relaxed text-[11px]">
+            Based on 200 autonomous agent simulations over 1,500 purchasing ticks across Indian metros, quick-commerce customer retention is extremely brittle. <strong>78% of small-basket users (&lt; ₹200) instantly defect</strong> when delivery thresholds are bumped, while corporate techies exhibit near-zero price elasticity but violent churn on delivery delays &gt; 12 mins.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-white mb-1.5 text-xs uppercase tracking-wider text-slate-200">1. Price Elasticity Breakdown by Persona</h4>
+          <div class="space-y-1.5 text-[11px]">
+            <div class="p-2 rounded-lg bg-black/30 border border-white/5 flex justify-between">
+              <span>🎓 College & Budget Students (ε = 0.95):</span>
+              <span class="text-rose-400 font-bold">100% Churn upon ₹30 fee</span>
+            </div>
+            <div class="p-2 rounded-lg bg-black/30 border border-white/5 flex justify-between">
+              <span>💼 Corporate High-Income (ε = 0.22):</span>
+              <span class="text-emerald-400 font-bold">Insensitive to ₹25 fee; sensitive to ETA</span>
+            </div>
+            <div class="p-2 rounded-lg bg-black/30 border border-white/5 flex justify-between">
+              <span>👨‍👩‍👧 Monthly Family Grocery Planners (ε = 0.65):</span>
+              <span class="text-amber-400 font-bold">Migrates entirely to BigBasket / Atta discounts</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-white mb-1.5 text-xs uppercase tracking-wider text-slate-200">2. The QuickCompare Opportunity Window</h4>
+          <p class="leading-relaxed text-[11px] text-slate-400">
+            When transparent unit pricing (₹/100g) and the <strong>Branch-and-Bound Split Cart</strong> are enabled:
+            <br>• Average basket savings across 10 staple goods reach <strong>₹64.20 per order</strong>.
+            <br>• <strong>38% of consumers</strong> eagerly accept 2 deliveries if net savings exceed ₹45 (surpassing the ₹25 friction penalty).
+            <br>• Shrinkflation deception (e.g. 450g packs disguised as 500g) causes severe consumer backlash and app abandonment.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="font-bold text-white mb-1.5 text-xs uppercase tracking-wider text-slate-200">3. Emergent Strategic Recommendations</h4>
+          <ul class="list-disc list-inside space-y-1 text-[11px] text-slate-300">
+            <li>Never increase delivery fees linearly on sub-₹199 carts without threshold repair staple suggestions.</li>
+            <li>Maintain honest freshness stamps: consumers trust neutral aggregators over proprietary "fastest" badges.</li>
+            <li>Single-app dominance is an illusion: 42% of modern metro households maintain both Blinkit and Zepto installed and choose purely on cart-total arbitrage.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="pt-4 border-t border-white/10 flex justify-between items-center text-[11px]">
+        <span class="text-slate-500 mono">Simulation Confidence: 94.6% • Monte Carlo n=10,000</span>
+        <button id="btnPrintReport" class="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition">
+          Print / Export Report
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIMULATION ENGINE JAVASCRIPT -->
+  <script>
+    // ==========================================
+    // 1. SIMULATION STATE & CONFIGURATION
+    // ==========================================
+    const NUM_AGENTS = 200;
+    let isPaused = false;
+    let simSpeed = 1;
+    let tickCount = 0;
+    let selectedAgent = null;
+
+    // Platform Market Conditions (Dynamic State)
+    const marketState = {
+      blinkit: {
+        name: 'Blinkit',
+        fee: 5,
+        threshold: 199,
+        deliveryFee: 25,
+        surge: 0,
+        avgEtaMins: 9,
+        stapleDiscount: 0,
+        color: '#eab308'
+      },
+      zepto: {
+        name: 'Zepto',
+        fee: 5,
+        threshold: 199,
+        deliveryFee: 30,
+        surge: 0,
+        avgEtaMins: 10,
+        stapleDiscount: 0,
+        color: '#a855f7'
+      },
+      instamart: {
+        name: 'Instamart',
+        fee: 6,
+        threshold: 199,
+        deliveryFee: 35,
+        surge: 0,
+        avgEtaMins: 14,
+        swiggyOneSubsidy: false,
+        color: '#f97316'
+      },
+      bigbasket: {
+        name: 'BB Now',
+        fee: 3,
+        threshold: 299,
+        deliveryFee: 20,
+        surge: 0,
+        avgEtaMins: 20,
+        stapleDiscount: 0,
+        color: '#06b6d4'
+      },
+      quickcompare_active: false
+    };
+
+    // Demographic Personas
+    const PERSONA_TYPES = [
+      {
+        id: 'budget_student',
+        name: 'Budget Student / PG',
+        avatar: '🎓',
+        priceElasticity: 0.95,
+        speedSensitivity: 0.2,
+        frictionTolerance: 0.8, // Willing to split delivery for savings
+        avgBasket: 140,
+        bias: 'zepto'
+      },
+      {
+        id: 'corporate_techie',
+        name: 'Corporate Techie',
+        avatar: '💻',
+        priceElasticity: 0.20,
+        speedSensitivity: 0.95,
+        frictionTolerance: 0.1, // Hates multiple deliveries
+        avgBasket: 580,
+        bias: 'blinkit'
+      },
+      {
+        id: 'family_planner',
+        name: 'Family Grocery Planner',
+        avatar: '👨‍👩‍👦',
+        priceElasticity: 0.70,
+        speedSensitivity: 0.4,
+        frictionTolerance: 0.6,
+        avgBasket: 1250,
+        bias: 'bigbasket'
+      },
+      {
+        id: 'late_night',
+        name: 'Night-Owl Craver',
+        avatar: '🦉',
+        priceElasticity: 0.35,
+        speedSensitivity: 0.85,
+        frictionTolerance: 0.2,
+        avgBasket: 290,
+        bias: 'zepto'
+      },
+      {
+        id: 'deal_hunter',
+        name: 'Coupon & Cashback Hunter',
+        avatar: '🎯',
+        priceElasticity: 0.90,
+        speedSensitivity: 0.3,
+        frictionTolerance: 0.9,
+        avgBasket: 380,
+        bias: 'instamart'
+      }
+    ];
+
+    const INDIAN_LOCATIONS = [
+      'Indiranagar, Bengaluru',
+      'HSR Layout, Bengaluru',
+      'Whitefield, Bengaluru',
+      'Bandra West, Mumbai',
+      'Andheri East, Mumbai',
+      'Powai, Mumbai',
+      'DLF Phase 5, Gurugram',
+      'Cyber City, Gurugram',
+      'Noida Sector 62',
+      'Banjara Hills, Hyderabad',
+      'Gachibowli, Hyderabad'
+    ];
+
+    // ==========================================
+    // 2. AGENT ENTITY GENERATION
+    // ==========================================
+    class Agent {
+      constructor(id) {
+        this.id = id;
+        this.persona = PERSONA_TYPES[Math.floor(Math.random() * PERSONA_TYPES.length)];
+        this.location = INDIAN_LOCATIONS[Math.floor(Math.random() * INDIAN_LOCATIONS.length)];
+        this.currentStore = this.persona.bias;
+        this.lastSwitchReason = 'Baseline preferred app choice';
+        this.switchCount = 0;
+        this.basketValue = Math.round(this.persona.avgBasket * (0.8 + Math.random() * 0.4));
+        
+        // Physics for visual 2D simulation
+        this.x = Math.random() * 800;
+        this.y = Math.random() * 500;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.size = 3.5 + Math.random() * 2;
+        this.trail = [];
+      }
+
+      // Decision utility function: which store maximizes utility right now?
+      evaluateBestStore() {
+        const scores = {};
+        const stores = ['blinkit', 'zepto', 'instamart', 'bigbasket'];
+
+        stores.forEach(s => {
+          const cfg = marketState[s];
+          let bill = this.basketValue + cfg.fee + cfg.surge;
+          let deliveryFee = (this.basketValue < cfg.threshold) ? cfg.deliveryFee : 0;
+          
+          if (s === 'instamart' && marketState.instamart.swiggyOneSubsidy && this.basketValue >= 99) {
+            deliveryFee = 0;
+          }
+
+          if (cfg.stapleDiscount > 0 && this.persona.id === 'family_planner') {
+            bill = bill * (1 - cfg.stapleDiscount);
+          }
+
+          const totalSpend = bill + deliveryFee;
+
+          // Utility components:
+          // 1. Cost utility (higher spend = negative utility scaled by price elasticity)
+          const costPenalty = (totalSpend / 100) * this.persona.priceElasticity * 12;
+
+          // 2. Speed utility (ETA in minutes scaled by speed sensitivity)
+          const speedPenalty = (cfg.avgEtaMins) * this.persona.speedSensitivity * 2.5;
+
+          // 3. QuickCompare effect (if active, deal hunters and budget students find split-cart arbitrage)
+          let qcBoost = 0;
+          if (marketState.quickcompare_active) {
+            if (this.persona.frictionTolerance >= 0.6) {
+              // Higher utility for whichever store offers the absolute cheapest component
+              qcBoost = 15;
+            }
+          }
+
+          // Inertia / loyalty bonus (switching carries psychological cost)
+          const loyaltyBonus = (this.currentStore === s) ? 4 : 0;
+
+          scores[s] = 100 - costPenalty - speedPenalty + loyaltyBonus + qcBoost;
+        });
+
+        // Find store with max score
+        let best = this.currentStore;
+        let maxScore = -9999;
+        for (const [st, sc] of Object.entries(scores)) {
+          if (sc > maxScore) {
+            maxScore = sc;
+            best = st;
+          }
+        }
+        return { best, scores };
+      }
+    }
+
+    // Initialize Swarm
+    const agents = [];
+    for (let i = 1; i <= NUM_AGENTS; i++) {
+      agents.push(new Agent(i));
+    }
+
+    // ==========================================
+    // 3. CANVAS PHYSICS & RENDERING ENGINE
+    // ==========================================
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * window.devicePixelRatio;
+      canvas.height = rect.height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Hub Coordinates (Logical 0..1 scale mapped to canvas dimensions)
+    function getHubCoords() {
+      const w = canvas.getBoundingClientRect().width;
+      const h = canvas.getBoundingClientRect().height;
+      return {
+        blinkit: { x: w * 0.20, y: h * 0.25, color: '#eab308', name: 'Blinkit' },
+        zepto: { x: w * 0.80, y: h * 0.25, color: '#a855f7', name: 'Zepto' },
+        instamart: { x: w * 0.20, y: h * 0.75, color: '#f97316', name: 'Instamart' },
+        bigbasket: { x: w * 0.80, y: h * 0.75, color: '#06b6d4', name: 'BB Now' },
+        center: { x: w * 0.50, y: h * 0.50 }
+      };
+    }
+
+    // Main Animation Loop (60 FPS)
+    function animate() {
+      const w = canvas.getBoundingClientRect().width;
+      const h = canvas.getBoundingClientRect().height;
+      const hubs = getHubCoords();
+
+      // Soft trails fade
+      ctx.fillStyle = 'rgba(5, 7, 10, 0.28)';
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw subtle quadrant guide lines
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(w / 2, 0); ctx.lineTo(w / 2, h);
+      ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2);
+      ctx.stroke();
+
+      // Draw Hub Circles
+      Object.entries(hubs).forEach(([key, hub]) => {
+        if (key === 'center') return;
+        ctx.beginPath();
+        ctx.arc(hub.x, hub.y, 45, 0, Math.PI * 2);
+        ctx.fillStyle = `${hub.color}08`;
+        ctx.fill();
+        ctx.strokeStyle = `${hub.color}25`;
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc(hub.x, hub.y, 7, 0, Math.PI * 2);
+        ctx.fillStyle = hub.color;
+        ctx.fill();
+      });
+
+      // QuickCompare Center Orbit Graphic
+      if (marketState.quickcompare_active) {
+        ctx.beginPath();
+        ctx.arc(hubs.center.x, hubs.center.y, 35, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Update and Draw Agents
+      agents.forEach(a => {
+        let target = hubs[a.currentStore] || hubs.blinkit;
+
+        // If QuickCompare is active and agent likes split-cart, orbit towards center
+        if (marketState.quickcompare_active && a.persona.frictionTolerance >= 0.7) {
+          target = hubs.center;
+        }
+
+        // Spring attraction force toward target hub
+        const dx = target.x - a.x;
+        const dy = target.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Gentle Brownian jitter
+        const jitterX = (Math.random() - 0.5) * 1.8;
+        const jitterY = (Math.random() - 0.5) * 1.8;
+
+        a.vx = a.vx * 0.92 + (dx / dist) * 0.18 + jitterX * 0.05;
+        a.vy = a.vy * 0.92 + (dy / dist) * 0.18 + jitterY * 0.05;
+
+        // Position update
+        a.x += a.vx * simSpeed;
+        a.y += a.vy * simSpeed;
+
+        // Keep inside bounds
+        a.x = Math.max(15, Math.min(w - 15, a.x));
+        a.y = Math.max(15, Math.min(h - 15, a.y));
+
+        // Color based on current store
+        let color = hubs[a.currentStore]?.color || '#ffffff';
+        if (marketState.quickcompare_active && a.persona.frictionTolerance >= 0.7) {
+          color = '#10b981'; // Green for smart split shoppers
+        }
+
+        // Draw Agent Particle
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.size, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.shadowColor = color;
+        ctx.shadowBlur = (selectedAgent === a) ? 14 : 3;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Selection ring
+        if (selectedAgent === a) {
+          ctx.beginPath();
+          ctx.arc(a.x, a.y, a.size + 4, 0, Math.PI * 2);
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      });
+
+      requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    // ==========================================
+    // 4. TICK ENGINE & REASONING DISPATCHER
+    // ==========================================
+    const mindFeed = document.getElementById('mindFeed');
+    let totalShiftsRecorded = 0;
+
+    function pushFeedLog(agent, oldStore, newStore, reason) {
+      totalShiftsRecorded++;
+      document.getElementById('feedCountBadge').innerText = `${totalShiftsRecorded} shifts`;
+
+      const card = document.createElement('div');
+      const storeColors = {
+        blinkit: 'text-amber-400 border-amber-500/20 bg-amber-500/5',
+        zepto: 'text-purple-400 border-purple-500/20 bg-purple-500/5',
+        instamart: 'text-orange-400 border-orange-500/20 bg-orange-500/5',
+        bigbasket: 'text-cyan-400 border-cyan-500/20 bg-cyan-500/5',
+        quickcompare: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10'
+      };
+
+      card.className = `p-3 rounded-xl border text-xs leading-relaxed transition-all ${storeColors[newStore] || 'card-glass'}`;
+      card.innerHTML = `
+        <div class="flex items-center justify-between text-[11px] mb-1 font-mono">
+          <span class="font-bold flex items-center gap-1">
+            ${agent.persona.avatar} Agent #${agent.id} (${agent.persona.name})
+          </span>
+          <span class="text-slate-400 font-normal">${agent.location.split(',')[0]}</span>
+        </div>
+        <div class="text-white font-medium text-[11px] mb-1">
+          Switched from <span class="capitalize line-through text-slate-400">${oldStore}</span> ➔ <span class="capitalize font-bold">${newStore}</span>
+        </div>
+        <p class="text-slate-300 text-[11px] italic">"${reason}"</p>
+      `;
+
+      mindFeed.insertBefore(card, mindFeed.firstChild);
+
+      // Keep feed max 40 items
+      if (mindFeed.children.length > 40) {
+        mindFeed.removeChild(mindFeed.lastChild);
+      }
+    }
+
+    function runSimulationTick() {
+      if (isPaused) return;
+      tickCount++;
+      document.getElementById('swarmStats').innerText = `${NUM_AGENTS} Agents Active • Tick: ${tickCount}`;
+
+      // Sample a subset of agents (12 to 20 agents) every tick to make decisions
+      const batchSize = Math.floor(10 + Math.random() * 10);
+      for (let i = 0; i < batchSize; i++) {
+        const a = agents[Math.floor(Math.random() * agents.length)];
+        const { best } = a.evaluateBestStore();
+
+        if (best !== a.currentStore) {
+          const old = a.currentStore;
+          a.currentStore = best;
+          a.switchCount++;
+
+          // Formulate realistic Hinglish / Indian consumer internal monologue
+          let reason = '';
+          if (best === 'zepto') {
+            reason = a.basketValue >= marketState.zepto.threshold 
+              ? `Subtotal ₹${a.basketValue} unlocks Zepto 10-min free delivery. Left ${old}.`
+              : `Needed 10-min immediate delivery for snacks. Accepted ₹${marketState.zepto.deliveryFee} fee.`;
+          } else if (best === 'blinkit') {
+            reason = marketState.blinkit.surge > 0 
+              ? `Paid ₹${marketState.blinkit.surge} surge because Blinkit had guaranteed 8-min ETA in ${a.location.split(',')[0]}.`
+              : `Blinkit has reliable stock and lower fees than ${old}. Switched.`;
+          } else if (best === 'instamart') {
+            reason = marketState.instamart.swiggyOneSubsidy 
+              ? `Swiggy One gave ₹0 delivery on ₹${a.basketValue} order. Saved ₹${marketState.zepto.deliveryFee} vs Zepto!`
+              : `Instamart offered better coupons on breakfast staples.`;
+          } else if (best === 'bigbasket') {
+            reason = `Family monthly staples (Atta/Ghee) were 15% cheaper on BB Now. Saved ₹${Math.round(a.basketValue * 0.15)}!`;
+          }
+
+          if (marketState.quickcompare_active && a.persona.frictionTolerance >= 0.7) {
+            reason = `QuickCompare found split-cart arbitrage: ₹48 cheaper across 2 apps than buying everything on ${old}!`;
+          }
+
+          a.lastSwitchReason = reason;
+          pushFeedLog(a, old, best, reason);
+        }
+      }
+
+      // Update Market Share Counters & Bars
+      updateKPIs();
+    }
+
+    function updateKPIs() {
+      const counts = { blinkit: 0, zepto: 0, instamart: 0, bigbasket: 0 };
+      agents.forEach(a => {
+        counts[a.currentStore] = (counts[a.currentStore] || 0) + 1;
+      });
+
+      const total = agents.length;
+      const bPct = ((counts.blinkit / total) * 100).toFixed(1);
+      const zPct = ((counts.zepto / total) * 100).toFixed(1);
+      const iPct = ((counts.instamart / total) * 100).toFixed(1);
+      const bbPct = ((counts.bigbasket / total) * 100).toFixed(1);
+
+      document.getElementById('kpiBlinkitShare').innerText = `${bPct}%`;
+      document.getElementById('kpiZeptoShare').innerText = `${zPct}%`;
+      document.getElementById('kpiInstamartShare').innerText = `${iPct}%`;
+      document.getElementById('kpiBbShare').innerText = `${bbPct}%`;
+
+      document.getElementById('kpiBlinkitCount').innerText = `${counts.blinkit} shoppers`;
+      document.getElementById('kpiZeptoCount').innerText = `${counts.zepto} shoppers`;
+      document.getElementById('kpiInstamartCount').innerText = `${counts.instamart} shoppers`;
+      document.getElementById('kpiBbCount').innerText = `${counts.bigbasket} shoppers`;
+
+      document.getElementById('barBlinkit').style.width = `${bPct}%`;
+      document.getElementById('barZepto').style.width = `${zPct}%`;
+      document.getElementById('barInstamart').style.width = `${iPct}%`;
+      document.getElementById('barBb').style.width = `${bbPct}%`;
+    }
+
+    // Set interval for simulation ticks
+    let tickTimer = setInterval(runSimulationTick, 400);
+
+    // ==========================================
+    // 5. INTERACTIVE MARKET SHOCK CONTROLS
+    // ==========================================
+
+    // Shock 1: Zepto Threshold Hike (₹199 -> ₹299)
+    document.getElementById('btnShockZeptoHike').addEventListener('click', () => {
+      marketState.zepto.threshold = 299;
+      marketState.zepto.deliveryFee = 35;
+      showToast('⚠️ SHOCK TRIGGERED: Zepto Free Delivery threshold raised to ₹299!');
+      agents.forEach(a => {
+        if (a.currentStore === 'zepto' && a.basketValue < 299 && a.persona.priceElasticity > 0.6) {
+          // Force immediate re-evaluation with heavy repulsion
+          a.vx += (Math.random() - 0.5) * 4;
+          a.vy += (Math.random() - 0.5) * 4;
+        }
+      });
+      runSimulationTick();
+    });
+
+    // Shock 2: Blinkit Rain Surge (+₹25)
+    document.getElementById('btnShockBlinkitSurge').addEventListener('click', () => {
+      marketState.blinkit.surge = 25;
+      marketState.blinkit.avgEtaMins = 16;
+      showToast('🌧️ SHOCK TRIGGERED: Rain surge +₹25 applied on Blinkit!');
+      runSimulationTick();
+    });
+
+    // Shock 3: Swiggy One ₹99 Free Delivery Blitz
+    document.getElementById('btnShockInstamartBlitz').addEventListener('click', () => {
+      marketState.instamart.swiggyOneSubsidy = true;
+      marketState.instamart.threshold = 99;
+      marketState.instamart.fee = 0;
+      showToast('🔥 SHOCK TRIGGERED: Swiggy One ₹99 Free Delivery blitz launched!');
+      runSimulationTick();
+    });
+
+    // Shock 4: BigBasket Staples -15% Discount
+    document.getElementById('btnShockBbDiscount').addEventListener('click', () => {
+      marketState.bigbasket.stapleDiscount = 0.15;
+      marketState.bigbasket.threshold = 199;
+      showToast('🌾 SHOCK TRIGGERED: BigBasket slashed staple grocery prices by 15%!');
+      runSimulationTick();
+    });
+
+    // Shock 5: Deploy QuickCompare Engine
+    document.getElementById('btnShockQuickCompare').addEventListener('click', () => {
+      marketState.quickcompare_active = true;
+      document.getElementById('qcCoreBadge').classList.remove('opacity-40');
+      document.getElementById('qcCoreBadge').classList.add('opacity-100', 'bg-emerald-500/20');
+      document.getElementById('statSplitWillingness').innerText = '64% of users';
+      document.getElementById('statShrinkAware').innerText = 'High (89% aware)';
+      showToast('🚀 APP DEPLOYED: QuickCompare enabled! Split-cart & shrinkflation exposed!');
+      runSimulationTick();
+    });
+
+    // Reset Baseline
+    document.getElementById('btnResetMarket').addEventListener('click', () => {
+      marketState.zepto.threshold = 199;
+      marketState.zepto.deliveryFee = 30;
+      marketState.blinkit.surge = 0;
+      marketState.blinkit.avgEtaMins = 9;
+      marketState.instamart.swiggyOneSubsidy = false;
+      marketState.instamart.threshold = 199;
+      marketState.instamart.fee = 6;
+      marketState.bigbasket.stapleDiscount = 0;
+      marketState.bigbasket.threshold = 299;
+      marketState.quickcompare_active = false;
+      document.getElementById('qcCoreBadge').classList.add('opacity-40');
+      document.getElementById('statSplitWillingness').innerText = '32% of users';
+      document.getElementById('statShrinkAware').innerText = 'Moderate (41%)';
+      showToast('🔄 Market conditions restored to baseline Oct 2026.');
+      updateKPIs();
+    });
+
+    // Speed & Pause Controls
+    const btnPauseToggle = document.getElementById('btnPauseToggle');
+    btnPauseToggle.addEventListener('click', () => {
+      isPaused = !isPaused;
+      document.getElementById('pauseIcon').innerText = isPaused ? '▶' : '⏸';
+      document.getElementById('pauseText').innerText = isPaused ? 'Resume' : 'Pause';
+    });
+
+    const btnSpeedToggle = document.getElementById('btnSpeedToggle');
+    btnSpeedToggle.addEventListener('click', () => {
+      if (simSpeed === 1) simSpeed = 2;
+      else if (simSpeed === 2) simSpeed = 4;
+      else simSpeed = 1;
+      document.getElementById('speedVal').innerText = `${simSpeed}x`;
+      clearInterval(tickTimer);
+      tickTimer = setInterval(runSimulationTick, 400 / simSpeed);
+    });
+
+    // ==========================================
+    // 6. AGENT CLICK & INSPECT MODAL
+    // ==========================================
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      // Find closest agent within 20px
+      let closest = null;
+      let minDist = 25;
+      agents.forEach(a => {
+        const dx = a.x - clickX;
+        const dy = a.y - clickY;
+        const d = Math.sqrt(dx * dx + dy * dy);
+        if (d < minDist) {
+          minDist = d;
+          closest = a;
+        }
+      });
+
+      if (closest) {
+        selectedAgent = closest;
+        openAgentModal(closest);
+      }
+    });
+
+    function openAgentModal(a) {
+      document.getElementById('modalAvatar').innerText = a.persona.avatar;
+      document.getElementById('modalName').innerText = `Agent #${a.id} — ${a.persona.name}`;
+      document.getElementById('modalPersonaBadge').innerText = a.persona.id.replace('_', ' ').toUpperCase();
+      document.getElementById('modalLocation').innerText = `${a.location} • Switches: ${a.switchCount} times`;
+      document.getElementById('modalStore').innerText = a.currentStore.toUpperCase();
+      document.getElementById('modalSensitivity').innerText = `${a.persona.priceElasticity} (${a.persona.priceElasticity > 0.6 ? 'High' : 'Low'})`;
+      document.getElementById('modalBasketSize').innerText = `₹${a.basketValue}`;
+      document.getElementById('modalFrictionTol').innerText = a.persona.frictionTolerance >= 0.6 ? 'High (Likes Split Savings)' : 'Low (Single App Only)';
+      document.getElementById('modalReasoning').innerText = `"${a.lastSwitchReason}"`;
+      document.getElementById('agentModal').classList.remove('hidden');
+    }
+
+    document.getElementById('btnCloseModal').addEventListener('click', () => {
+      document.getElementById('agentModal').classList.add('hidden');
+      selectedAgent = null;
+    });
+    document.getElementById('btnModalCloseAction').addEventListener('click', () => {
+      document.getElementById('agentModal').classList.add('hidden');
+      selectedAgent = null;
+    });
+
+    // ==========================================
+    // 7. PREDICTION REPORT MODAL
+    // ==========================================
+    const reportModal = document.getElementById('reportModal');
+    document.getElementById('btnOpenReport').addEventListener('click', () => {
+      reportModal.classList.remove('hidden');
+    });
+    document.getElementById('btnCloseReportModal').addEventListener('click', () => {
+      reportModal.classList.add('hidden');
+    });
+    document.getElementById('btnPrintReport').addEventListener('click', () => {
+      window.print();
+    });
+
+    // Toast Notification Utility
+    function showToast(msg) {
+      const toast = document.createElement('div');
+      toast.className = 'fixed bottom-5 right-5 z-50 px-4 py-2.5 rounded-xl card-glass border border-emerald-500/30 text-emerald-300 font-semibold text-xs shadow-2xl transition-all duration-300 transform translate-y-5 opacity-0 flex items-center gap-2';
+      toast.innerHTML = `<span>⚡</span> <span>${msg}</span>`;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-5', 'opacity-0');
+      }, 50);
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-5');
+        setTimeout(() => toast.remove(), 400);
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
